@@ -37,6 +37,16 @@ in source-side preparation and are not in the snapshots or coordinator output.
 
 ## Workflow and disclosure boundary
 
+```mermaid
+flowchart LR
+    S["ServerApp<br/>PLX-4720 / BRAF V600E query"] --> C1["SuperNode 1 ClientApp<br/>local GDSC2 cell lines"]
+    S --> C2["SuperNode 2 ClientApp<br/>local GDSC2 cell lines"]
+    S --> C3["SuperNode 3 ClientApp<br/>local GDSC2 cell lines"]
+    C1 -->|"BRAF effect, HC3 SE, N"| A["ServerApp<br/>combine effects and assess disagreement"]
+    C2 -->|"BRAF effect, HC3 SE, N"| A
+    C3 -->|"BRAF effect, HC3 SE, N"| A
+```
+
 The ClientApp loads only its configured local NPZ file, verifies the approved
 contract, fits OLS with HC3 robust standard errors, and releases an allowlisted
 site-level summary. The ServerApp validates replies and performs
