@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cohortlens-agent"
+version = "0.1.0"
+description = "The CohortLens Flower AgentApp"
+license = { file = "LICENSE" }
+requires-python = ">=3.11,<4.0"
+dependencies = ["flwr>=1.37.0,<1.38.0", "openai==2.54.0", "pydantic==2.13.5"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["cohortlens_agent", "cohortlens_shared"]
+
+[tool.flwr.app]
+publisher = "apsal"
+fab-format-version = 1
+flwr-version-target = "1.37.0"
+fab-include = ["cohortlens_agent/**/*.py", "cohortlens_shared/**/*.py", "LICENSE"]
+
+[tool.flwr.app.config.agent]
+mode = "planner"
+input = '''{"study_id":"phase1-demo","question":"Is the fictional variant associated with the synthetic biomarker across all three sites?"}'''
+
+[tool.flwr.app.components]
+agentapp = "cohortlens_agent.agent_app:app"

@@ -1,0 +1,2 @@
+"""CohortLens federated analytics application."""
+

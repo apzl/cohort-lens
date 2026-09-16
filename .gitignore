@@ -1,0 +1,11 @@
+.venv/
+*.fab
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+runs/
+data/
+!README.md
+*.md
+.venv/
