@@ -1,4 +1,4 @@
-"""Site-local Phase 1 preflight and association actions."""
+"""Site-local (ClientApp) preflight and association actions."""
 
 from __future__ import annotations
 
@@ -66,9 +66,9 @@ def _site_index(site_alias: str) -> int:
     try:
         site_number = int(site_alias.removeprefix("site-"))
     except ValueError as error:
-        raise ValueError("Phase 1 synthetic aliases must be site-1 through site-3") from error
+        raise ValueError("Synthetic site aliases must be site-1 through site-3") from error
     if site_number not in (1, 2, 3):
-        raise ValueError("Phase 1 synthetic aliases must be site-1 through site-3")
+        raise ValueError("Synthetic site aliases must be site-1 through site-3")
     return site_number - 1
 
 
@@ -199,7 +199,7 @@ def handle_preflight(
     outcome: np.ndarray | None = None,
     snapshot_alias: str | None = None,
 ) -> Message:
-    """Validate either the retained Phase 0 or approved Phase 1 preflight."""
+    """Validate either the legacy connectivity preflight or the approved study preflight."""
     if (design is None) != (outcome is None):
         raise ValueError("design and outcome must be supplied together")
     if design is None or outcome is None:

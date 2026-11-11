@@ -551,11 +551,20 @@ def default_phase1_contract() -> AnalysisContract:
     )
 
 
-def default_gdsc_contract() -> AnalysisContract:
+def default_gdsc_contract(
+    *, simulation_split: str | None = None
+) -> AnalysisContract:
     """Return the minimal approved GDSC2 PLX-4720 analysis contract."""
+    if simulation_split not in {None, "lineage-enriched-v1"}:
+        raise ValueError(f"unsupported GDSC simulation split: {simulation_split}")
+    lineage_simulation = simulation_split == "lineage-enriched-v1"
     return AnalysisContract(
         study_id="gdsc2-plx4720-braf-v600e",
-        analysis_id="primary-001",
+        analysis_id=(
+            "primary-lineage-enriched-sim-001"
+            if lineage_simulation
+            else "primary-001"
+        ),
         template_id="ols_quantitative_v1",
         variant=VariantSpec(
             reference_build="CMP_DRIVER_SUMMARY_PINNED",
@@ -567,7 +576,11 @@ def default_gdsc_contract() -> AnalysisContract:
         phenotype_unit="ln_micromolar",
         covariate_ids=("TCGA_SKCM_VS_OTHER_V1",),
         cohort_rule_id="GDSC2_PLX4720_MUTATION_COVERED_V1",
-        site_roster_id="GDSC2_MODEL_HASH3_V1",
+        site_roster_id=(
+            "GDSC2_LINEAGE_ENRICHED3_SIM_V1"
+            if lineage_simulation
+            else "GDSC2_MODEL_HASH3_V1"
+        ),
         privacy_policy_id="PUBLIC_GDSC_RELEASE_V1",
         statistical_policy_id="OLS_HC3_FIXED_EFFECT_V1",
         expected_sites=3,
@@ -763,7 +776,16 @@ def compile_stratified_followup(
         covariate_ids=("INTERCEPT_ONLY_AFTER_STRATIFICATION",) if gdsc else ("age_z_v1", "sex_code_v1"),
         cohort_rule_id=("GDSC2_PLX4720_MUTATION_COVERED_V1" if gdsc else "all_synthetic_adults_v1"),
         strata=("non_skcm", "skcm") if gdsc else ("context_0", "context_1"),
-        site_roster_id=("GDSC2_MODEL_HASH3_V1" if gdsc else "demo_three_sites_v1"),
+        site_roster_id=(
+            (
+                "GDSC2_LINEAGE_ENRICHED3_SIM_V1"
+                if parent.data_provenance
+                == "GDSC2_8.5_LINEAGE_ENRICHED_SIM_V1"
+                else "GDSC2_MODEL_HASH3_V1"
+            )
+            if gdsc
+            else "demo_three_sites_v1"
+        ),
         privacy_policy_id=("PUBLIC_GDSC_RELEASE_V1" if gdsc else "synthetic_release_v1"),
         statistical_policy_id=("OLS_HC3_FIXED_EFFECT_V1" if gdsc else "ols_hc3_fixed_effect_v1"),
         expected_sites=parent.expected_sites,

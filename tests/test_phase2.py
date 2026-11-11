@@ -1,4 +1,4 @@
-"""Phase 2 bounded follow-up contracts and local stratified calculations."""
+"""Bounded follow-up contracts and local stratified calculations."""
 
 import pytest
 from flwr.app import ConfigRecord, Message, RecordDict

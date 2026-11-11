@@ -1,10 +1,24 @@
+# Python
 .venv/
-*.fab
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .coverage
-runs/
+*.egg-info/
+dist/
+
+# Flower App Bundles and other build output
+*.fab
+build/
+
+# Local data and run artifacts (source downloads, site snapshots, logs, run IDs)
 data/
-*.md
-!README.md
+runs/
+
+# Private working notes (plans, status logs, pitch material)
+notes/
+
+# Secrets and OS noise
+.env
+.DS_Store
+*:Zone.Identifier

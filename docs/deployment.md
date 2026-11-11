@@ -1,6 +1,6 @@
 # CohortLens deployment SuperNodes
 
-This runbook executes Phase 1 through registered `flower-supernode` processes
+This runbook executes the synthetic simulation track through registered `flower-supernode` processes
 instead of Flower's Simulation Runtime. Keep private keys, datasets, runtime
 state, and logs outside the repository.
 
@@ -64,10 +64,10 @@ flwr federation list supergrid \
   --federation @ACCOUNT/cohortlens-deployment
 ```
 
-## 4. Run Phase 1
+## 4. Run the primary analysis
 
 ```shell
-uv run cohortlens prepare-phase1 \
+uv run cohortlens prepare-synthetic \
   --output-dir runs/phase1-deployment \
   --approved-by OPERATOR --valid-hours 24
 

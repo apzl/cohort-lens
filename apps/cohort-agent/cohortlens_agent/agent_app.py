@@ -44,7 +44,7 @@ def _json_object(text: str) -> str:
 def parse_agent_output(
     mode: str, output_text: str
 ) -> PlannerProposal | ReporterOutput | FollowUpProposal:
-    """Validate model prose as one of the two bounded Phase 1 artifacts."""
+    """Validate model prose as one of the bounded planner or reporter artifacts."""
     payload = _json_object(output_text)
     if mode == "planner":
         return PlannerProposal.model_validate_json(payload)

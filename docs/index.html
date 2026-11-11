@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CohortLens</title>
+<meta name="description" content="CohortLens: one approved statistical question travels to three sites, only small summaries come back. A personal project on Flower SuperGrid with public GDSC2 cell-line data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: dark header band, stone page, white cards; one wide pipeline diagram leads, everything else explains it. */
+:root{
+  --ink:#14282f; --head:#0f252c; --on-head:#ffffff; --on-head-soft:#c9dadb;
+  --accent:#4fc3b0; --accent-deep:#23897a; --accent-soft:#e3f4f1; --on-accent:#0f252c;
+  --muted:#566a6f; --faint:#98a6a8; --line:#e0e6e5; --paper:#ffffff; --stone:#f1f4f3;
+  --ok:#1c7f71; --link:#2c63b8;
+  --sum:#3f6fd1; --sum-soft:#e6edfb;
+  --llm:#b3741a; --llm-soft:#fbf0dc;
+  --human:#7a52c7; --human-soft:#efe9fa;
+  --stop:#b8503a; --stop-soft:#fae9e4;
+  --radius:12px; --radius-sm:9px;
+  --font:"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono:"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#e3eeed; --head:#0a1a1f; --on-head:#ffffff; --on-head-soft:#b5c9ca;
+    --accent:#4fc3b0; --accent-deep:#5fd0bd; --accent-soft:#12312d; --on-accent:#08201c;
+    --muted:#9bb0b2; --faint:#647a7d; --line:#22363b; --paper:#13232a; --stone:#0c171b;
+    --ok:#5fd0bd; --link:#86adf0;
+    --sum:#86a8f2; --sum-soft:#18274a;
+    --llm:#e2ab55; --llm-soft:#33260f;
+    --human:#b596f0; --human-soft:#271d40;
+    --stop:#ec8f7b; --stop-soft:#3a1c15;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#e3eeed; --head:#0a1a1f; --on-head:#ffffff; --on-head-soft:#b5c9ca;
+  --accent:#4fc3b0; --accent-deep:#5fd0bd; --accent-soft:#12312d; --on-accent:#08201c;
+  --muted:#9bb0b2; --faint:#647a7d; --line:#22363b; --paper:#13232a; --stone:#0c171b;
+  --ok:#5fd0bd; --link:#86adf0;
+  --sum:#86a8f2; --sum-soft:#18274a;
+  --llm:#e2ab55; --llm-soft:#33260f;
+  --human:#b596f0; --human-soft:#271d40;
+  --stop:#ec8f7b; --stop-soft:#3a1c15;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--stone);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--accent-deep);outline-offset:2px}
+code,.mono{font-family:var(--mono);font-size:.9em}
+code{background:var(--stone);border-radius:5px;padding:1px 5px;overflow-wrap:anywhere}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+header.top{background:var(--head);color:var(--on-head)}
+header.top .wrap{padding-block:22px;display:flex;flex-wrap:wrap;gap:10px 32px;align-items:flex-end;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--on-head-soft);letter-spacing:.02em;margin-bottom:4px}
+.brand i{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+h1{margin:0;font-size:26px;font-weight:600;letter-spacing:-.01em}
+.sub{margin:4px 0 0;color:var(--on-head-soft);max-width:760px;font-size:14.5px}
+.topnav{display:flex;gap:4px;background:rgba(255,255,255,.08);border-radius:999px;padding:3px}
+.topnav a{color:var(--on-head-soft);font-size:13.5px;font-weight:500;padding:5px 14px;border-radius:999px}
+.topnav a:hover{color:#fff;text-decoration:none}
+.topnav a.cta{background:var(--accent);color:var(--on-accent)}
+main{padding:40px 0 72px}
+section{margin-bottom:56px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ok);font-weight:600;margin-bottom:6px}
+h2{font-size:26px;font-weight:600;letter-spacing:-.015em;margin:0 0 6px;line-height:1.2;text-wrap:balance}
+h3{text-wrap:balance}
+.lead{color:var(--muted);margin:0 0 24px;max-width:720px;font-size:16px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;min-width:0}
+
+/* hero */
+.hero{padding:8px 0 0}
+.hero h2{font-size:36px;letter-spacing:-.02em;max-width:780px}
+.hero .lead{font-size:17.5px;color:var(--ink);max-width:820px;margin-bottom:14px}
+.hero .lead b{color:var(--ok);font-weight:600}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 24px;padding:0;list-style:none}
+.facts li{font-size:12.5px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 11px;color:var(--muted)}
+
+/* pipeline diagram */
+.diagram{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:14px 14px 0;overflow:hidden}
+.dscroll{overflow-x:auto}
+#pipe{display:block;width:100%;min-width:900px;height:auto}
+#pipe text{font-family:var(--font);fill:var(--ink)}
+#pipe .nt{font-size:15px;font-weight:600;text-anchor:middle}
+#pipe .ns{font-size:12px;fill:var(--muted);text-anchor:middle}
+#pipe .node rect,#pipe .node polygon{fill:var(--stone);stroke:var(--line);stroke-width:1.5;transition:fill .25s,stroke .25s}
+#pipe .node.on rect,#pipe .node.on polygon{fill:var(--accent-soft);stroke:var(--accent-deep);stroke-width:2.2}
+#pipe .node.llm.on rect{fill:var(--llm-soft);stroke:var(--llm)}
+#pipe .node.human.on rect{fill:var(--human-soft);stroke:var(--human)}
+#pipe .node .rows line{stroke:var(--faint);stroke-width:2;stroke-linecap:round}
+#pipe .edge{fill:none;stroke:var(--faint);stroke-width:1.6;transition:stroke .2s}
+#pipe .edge.on{stroke:var(--accent-deep);stroke-width:2.2}
+#pipe .ah{fill:var(--faint)}
+#pipe .bound{fill:none;stroke-width:1.6;stroke-dasharray:6 5;transition:stroke-width .2s}
+#pipe .bound.on{stroke-width:2.6}
+#pipe .b-rows{stroke:var(--stop)} #pipe .bl-rows{fill:var(--stop)}
+#pipe .b-agg{stroke:var(--llm)} #pipe .bl-agg{fill:var(--llm)}
+#pipe .b-auth{stroke:var(--human)} #pipe .bl-auth{fill:var(--human)}
+#pipe .bl{font-size:12.5px;font-weight:600;text-anchor:middle}
+#pipe .el{font-size:11.5px;fill:var(--muted);text-anchor:middle;font-weight:500}
+#pipe .el.fin{fill:var(--ok);font-weight:600} #pipe .el.inv{fill:var(--llm);font-weight:600;text-anchor:start}
+#pipe .pk circle{stroke:var(--paper);stroke-width:2}
+#pipe .pk rect{rx:9}
+#pipe .pk text{font-size:11px;font-weight:600;text-anchor:middle;fill:#fff}
+#pipe .pk.req circle,#pipe .pk.req rect{fill:var(--accent-deep)}
+#pipe .pk.sum circle,#pipe .pk.sum rect{fill:var(--sum)}
+#pipe .pk.llm circle,#pipe .pk.llm rect{fill:var(--llm)}
+#pipe .pk.human circle,#pipe .pk.human rect{fill:var(--human)}
+:root[data-theme="dark"] #pipe .pk text{fill:#0c171b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #pipe .pk text{fill:#0c171b}}
+.cap{display:flex;gap:14px;align-items:flex-start;padding:14px 8px 12px;border-top:1px solid var(--line);margin-top:8px;min-height:84px}
+.cap .num{flex:none;width:30px;height:30px;border-radius:9px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.cap .txt{min-width:0;flex:1}
+.cap b{display:block;font-size:16px;font-weight:600;line-height:1.3}
+.cap span{color:var(--muted);font-size:14.5px}
+.ctl{display:flex;align-items:center;gap:12px;padding:0 8px 14px;flex-wrap:wrap}
+.btn{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--stone);color:var(--ink);border-radius:999px;padding:5px 14px;cursor:pointer}
+.btn:hover{border-color:var(--accent-deep)}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.dots{display:flex;gap:5px;flex-wrap:wrap}
+.dots button{width:26px;height:10px;border-radius:999px;border:0;background:var(--line);cursor:pointer;padding:0}
+.dots button.on{background:var(--accent-deep)}
+.swipe{display:none;flex-basis:100%;font-size:12.5px;color:var(--muted)}
+@media (max-width:940px){.swipe{display:block}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-left:auto;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+/* stage cards */
+.stages{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.stage h3{display:flex;align-items:center;gap:10px;margin:0 0 8px;font-size:17px;font-weight:600}
+.stage h3 .n{width:26px;height:26px;border-radius:8px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:13px;font-weight:700;flex:none;border:0;cursor:pointer;font-family:inherit}
+.stage p{margin:0 0 12px}
+.gives{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;background:var(--accent-soft);border-radius:var(--radius-sm);padding:9px 12px;font-size:14px;margin-bottom:10px}
+.gives b{font-weight:600;white-space:nowrap}
+.gives.none{background:var(--stone);color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted)}
+.meta .mono{overflow-wrap:anywhere}
+
+/* disclosure diagram */
+.see{display:grid;grid-template-columns:1fr 46px 1fr 46px 1fr 46px 1fr;align-items:stretch}
+.who{border:1.5px solid var(--line);border-radius:var(--radius);padding:14px;background:var(--paper);min-width:0}
+.who h3{margin:0 0 2px;font-size:15.5px;font-weight:600}
+.who .role{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+.who ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.who li{font-size:13px;border-radius:8px;padding:5px 9px;background:var(--stone);line-height:1.35}
+.who li.rows{background:var(--stop-soft);color:var(--stop);font-weight:500}
+.who li.site{background:var(--sum-soft);color:var(--sum);font-weight:500}
+.who li.net{background:var(--accent-soft);color:var(--ok);font-weight:500}
+.who li.no{background:transparent;border:1px dashed var(--line);color:var(--faint);text-decoration:line-through}
+.wall{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.wall::before{content:"";position:absolute;top:6px;bottom:6px;left:50%;border-left:2px dashed var(--c)}
+.wall .lane{position:relative;width:100%;height:10px}
+.wall .lane i{position:absolute;left:0;top:1px;width:8px;height:8px;border-radius:50%;background:var(--d);animation:cross 2.8s linear infinite;animation-delay:var(--dl,0s)}
+.wall .lane.blocked i{animation-name:bounce}
+@keyframes cross{0%{left:0;opacity:0}12%{opacity:1}88%{opacity:1}100%{left:calc(100% - 8px);opacity:0}}
+@keyframes bounce{0%{left:0;opacity:0}12%{opacity:1}42%{left:calc(50% - 10px);opacity:1}60%{left:calc(50% - 16px);opacity:.6}100%{left:calc(50% - 16px);opacity:0}}
+.walls-key{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.walls-key .card{padding:14px 16px;border-left-width:1px}
+.walls-key h3{margin:0 0 4px;font-size:14.5px;font-weight:600;display:flex;gap:8px;align-items:center}
+.walls-key h3 i{width:18px;border-top:2px dashed var(--c);display:inline-block;flex:none}
+.walls-key p{margin:0;font-size:13.5px;color:var(--muted)}
+
+/* gate */
+.gate{display:grid;grid-template-columns:5fr 6fr;gap:14px;align-items:stretch}
+.gate label{font-size:13px;font-weight:600;display:block;margin-bottom:6px}
+.track{position:relative;margin:26px 0 30px}
+.track input{width:100%;margin:0;accent-color:var(--accent-deep)}
+.track .thr{position:absolute;left:50%;top:-22px;bottom:-22px;border-left:2px dashed var(--llm)}
+.track .thr::after{content:"threshold 0.50";position:absolute;top:-2px;left:6px;font-size:11.5px;color:var(--llm);white-space:nowrap;font-weight:600}
+.track .ends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);margin-top:4px}
+.i2{font-size:40px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.i2 small{font-size:14px;color:var(--muted);font-weight:500;margin-left:6px}
+.seg{display:inline-flex;background:var(--stone);border-radius:999px;padding:3px;gap:2px}
+.seg button{font:inherit;font-size:13px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:999px;padding:4px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.outs{display:grid;gap:10px;align-content:center}
+.out{display:grid;grid-template-columns:22px 1fr;gap:12px;align-items:center;border:1.5px solid var(--line);border-radius:var(--radius);padding:12px 14px;opacity:.5;transition:opacity .25s,border-color .25s,background .25s,transform .25s}
+.out .pip{width:14px;height:14px;border-radius:50%;background:var(--line);justify-self:center}
+.out b{display:block;font-family:var(--mono);font-size:13.5px;font-weight:500}
+.out span{font-size:13.5px;color:var(--muted)}
+.out.on{opacity:1;transform:translateX(4px)}
+.out.on.fin{border-color:var(--accent-deep);background:var(--accent-soft)} .out.on.fin .pip{background:var(--accent-deep)}
+.out.on.inv{border-color:var(--llm);background:var(--llm-soft)} .out.on.inv .pip{background:var(--llm)}
+.out.on.stp{border-color:var(--stop);background:var(--stop-soft)} .out.on.stp .pip{background:var(--stop)}
+.out.on .pip{animation:pip 1.6s ease-in-out infinite}
+@keyframes pip{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 6px color-mix(in srgb,currentColor 12%,transparent)}}
+
+/* technical */
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tool:last-child{grid-column:1/-1}
+.tool h3{font-size:15px;font-weight:600;margin:0 0 6px}
+.tool p{margin:0;font-size:13.5px;color:var(--muted)}
+.tool .ic{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);display:grid;place-items:center;margin-bottom:10px;color:var(--ok)}
+.tool .ic svg{width:18px;height:18px}
+
+/* results */
+.results{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.results h3{margin:0 0 2px;font-size:17px;font-weight:600}
+.results .q{color:var(--muted);margin:0 0 14px;font-size:14px}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.kv div{background:var(--stone);border-radius:var(--radius-sm);padding:8px 10px;font-size:12.5px;color:var(--muted);min-width:0}
+.kv b{display:block;font-size:17px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tag{display:inline-block;font-family:var(--mono);font-size:12px;border-radius:999px;padding:2px 10px;background:var(--accent-soft);color:var(--ok)}
+.tag.inv{background:var(--llm-soft);color:var(--llm)}
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--muted);margin:0 0 12px}
+.chain .ar{color:var(--faint)}
+.ci{margin:4px 0 12px}
+.ci svg{display:block;width:100%;height:auto}
+.ci text{font-family:var(--font);font-size:11px;fill:var(--muted)}
+.foot{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+.note{background:var(--llm-soft);color:var(--ink);border-radius:var(--radius);padding:12px 16px;font-size:14px;margin-top:14px}
+.note b{color:var(--llm)}
+.nums{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}
+.nums .card{padding:14px 16px}
+.nums b{display:block;font-size:28px;font-weight:600;line-height:1.1;color:var(--ok);font-variant-numeric:tabular-nums}
+.nums span{font-size:13px;color:var(--muted)}
+
+/* limits */
+.limits{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.limits ul{margin:0;padding:0;list-style:none}
+.limits li{padding:10px 0 10px 26px;border-top:1px solid var(--stone);position:relative}
+.limits li b{font-weight:600}
+.limits li:first-child{border-top:0;padding-top:0}
+.limits li::before{content:"";position:absolute;left:4px;top:17px;width:9px;height:9px;border-radius:50%;background:var(--faint)}
+.limits li:first-child::before{top:7px}
+.limits h3{margin:0 0 12px;font-size:16px;font-weight:600}
+
+footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:13.5px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-between}
+.stack{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:8px 0 0;padding:0}
+.stack li{font-size:12.5px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+
+@media (max-width:1000px){
+  .stages,.gate,.results,.limits{grid-template-columns:1fr}
+  .tools{grid-template-columns:repeat(2,1fr)}
+  .nums{grid-template-columns:repeat(3,1fr)}
+  .see{grid-template-columns:1fr}
+  .wall{flex-direction:row;height:34px}
+  .wall::before{top:50%;bottom:auto;left:6px;right:6px;border-left:0;border-top:2px dashed var(--c)}
+  .wall .lane{display:none}
+  .walls-key{grid-template-columns:1fr}
+  .legend{margin-left:0}
+}
+@media (max-width:560px){
+  .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .hero h2{font-size:28px}
+  h2{font-size:22px}
+  .tools{grid-template-columns:1fr}
+  .nums{grid-template-columns:repeat(2,1fr)}
+  .kv{grid-template-columns:1fr 1fr}
+  .card{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  .wall .lane i,.out.on .pip{animation:none!important}
+  .wall .lane i{opacity:1;left:0}
+  *{transition:none!important}
+}
+
+/* capture mode: only the pipeline diagram, fixed 1200x620, light palette, no transitions */
+body.capture{background:#fff;width:1200px;height:620px;overflow:hidden}
+body.capture>*:not(#capture-root){display:none!important}
+body.capture #capture-root{width:1200px;height:620px;background:#fff}
+body.capture .diagram{border:0;border-radius:0;padding:0;background:#fff}
+body.capture #pipe{width:1200px;height:540px;min-width:0}
+body.capture .cap{margin:0;padding:14px 24px;height:80px;min-height:0;align-items:center}
+body.capture .cap b{font-size:18px} body.capture .cap span{font-size:15.5px}
+body.capture .cap .num{width:36px;height:36px;font-size:16px}
+body.capture .ctl{display:none}
+body.capture *{transition:none!important;animation:none!important}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <div class="brand"><i></i> Personal project · federated analytics</div>
+      <h1>CohortLens</h1>
+      <p class="sub">One approved statistical question, three sites, small summaries only.</p>
+    </div>
+    <nav class="topnav" aria-label="Page">
+      <a href="#steps">Steps</a>
+      <a href="#gate">Gate</a>
+      <a href="#results">Results</a>
+      <a class="cta" href="https://github.com/apzl/cohort-lens">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<section class="hero" id="pipeline">
+  <div class="eyebrow">How it works</div>
+  <h2>The question travels. The records stay where they are.</h2>
+  <p class="lead">Three labs hold data they cannot pool. CohortLens sends each of them the same pre-approved statistical question, lets each one answer it on its own rows, and brings back <b>an effect, its standard error and a count</b>. A coordinator combines the three answers and checks whether the sites agree.</p>
+  <ul class="facts">
+    <li>Personal project</li>
+    <li>Emulated three-site federation</li>
+    <li>Public GDSC2 cancer cell-line data, not patients</li>
+    <li>Flower 1.37 SuperGrid, three SuperNodes</li>
+  </ul>
+
+  <div class="diagram" id="diagram">
+    <div class="dscroll">
+    <svg id="pipe" viewBox="0 0 1200 540" role="img" aria-label="Animated pipeline: the operator approves a contract, the ServerApp fans it out to three SuperNodes, each returns only beta, standard error and N, the ServerApp pools them, a deterministic gate either finishes with a report or sends aggregates to a bounded LLM call, a human approves a new contract, and a stratified second run produces a follow-up report.">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0.8 L9,5 L0,9.2 z"/></marker>
+      </defs>
+
+      <!-- boundaries -->
+      <rect class="bound b-rows" id="b-rows" x="442" y="6" width="216" height="312" rx="16"/>
+      <text class="bl bl-rows" x="550" y="27">Rows never leave the node</text>
+      <rect class="bound b-agg" id="b-agg" x="902" y="376" width="196" height="120" rx="16"/>
+      <text class="bl bl-agg" x="1000" y="517">LLM sees network aggregates only</text>
+      <line class="bound b-auth" id="b-auth" x1="825" y1="374" x2="825" y2="498"/>
+      <text class="bl bl-auth" x="825" y="364">LLM proposes · human authorizes</text>
+
+      <!-- edges -->
+      <path class="edge" id="e1" d="M150,170 H214" marker-end="url(#ah)"/>
+      <path class="edge" id="e2a" d="M370,160 C415,160 405,72 454,72" marker-end="url(#ah)"/>
+      <path class="edge" id="e2b" d="M370,170 H454" marker-end="url(#ah)"/>
+      <path class="edge" id="e2c" d="M370,180 C415,180 405,268 454,268" marker-end="url(#ah)"/>
+      <path class="edge" id="e3a" d="M640,72 C715,72 695,160 764,160" marker-end="url(#ah)"/>
+      <path class="edge" id="e3b" d="M640,170 H764" marker-end="url(#ah)"/>
+      <path class="edge" id="e3c" d="M640,268 C715,268 695,180 764,180" marker-end="url(#ah)"/>
+      <path class="edge" id="e4" d="M920,170 H950" marker-end="url(#ah)"/>
+      <path class="edge" id="e5" d="M1044,170 H1086" marker-end="url(#ah)"/>
+      <path class="edge" id="e6" d="M1000,214 V390" marker-end="url(#ah)"/>
+      <path class="edge" id="e7" d="M920,436 H736" marker-end="url(#ah)"/>
+      <path class="edge" id="e8" d="M560,436 H315 Q295,436 295,416 V221" marker-end="url(#ah)"/>
+      <path class="edge" id="e9" d="M845,125 C845,44 1139,44 1139,124" marker-end="url(#ah)"/>
+
+      <!-- edge labels -->
+      <text class="el" x="730" y="304">only β, SE, N cross</text>
+      <text class="el fin" x="1066" y="156">FINISH</text>
+      <text class="el inv" x="1012" y="296">INVESTIGATE</text>
+      <text class="el" x="1012" y="312" style="text-anchor:start">if I² ≥ 0.50</text>
+      <text class="el" x="430" y="458">new contract hash + approval</text>
+      <text class="el" x="992" y="50">follow-up result</text>
+
+      <!-- nodes -->
+      <g class="node" id="n-op"><rect x="20" y="128" width="130" height="84" rx="14"/><text class="nt" x="85" y="165">Operator</text><text class="ns" x="85" y="185">contract + approval</text></g>
+      <g class="node" id="n-server"><rect x="220" y="125" width="150" height="90" rx="14"/><text class="nt" x="295" y="165">ServerApp</text><text class="ns" x="295" y="185">validate · fan out</text></g>
+      <g class="node" id="n-s1"><rect x="460" y="40" width="180" height="64" rx="12"/><g class="rows"><line x1="476" y1="62" x2="492" y2="62"/><line x1="476" y1="72" x2="492" y2="72"/><line x1="476" y1="82" x2="492" y2="82"/></g><text class="nt" x="560" y="68">SuperNode 1</text><text class="ns" x="560" y="87" id="s1s">local rows</text></g>
+      <g class="node" id="n-s2"><rect x="460" y="138" width="180" height="64" rx="12"/><g class="rows"><line x1="476" y1="160" x2="492" y2="160"/><line x1="476" y1="170" x2="492" y2="170"/><line x1="476" y1="180" x2="492" y2="180"/></g><text class="nt" x="560" y="166">SuperNode 2</text><text class="ns" x="560" y="185" id="s2s">local rows</text></g>
+      <g class="node" id="n-s3"><rect x="460" y="236" width="180" height="64" rx="12"/><g class="rows"><line x1="476" y1="258" x2="492" y2="258"/><line x1="476" y1="268" x2="492" y2="268"/><line x1="476" y1="278" x2="492" y2="278"/></g><text class="nt" x="560" y="264">SuperNode 3</text><text class="ns" x="560" y="283" id="s3s">local rows</text></g>
+      <g class="node" id="n-meta"><rect x="770" y="125" width="150" height="90" rx="14"/><text class="nt" x="845" y="165">Meta-analysis</text><text class="ns" x="845" y="185">β · 95% CI · I²</text></g>
+      <g class="node" id="n-gate"><polygon points="1000,126 1044,170 1000,214 956,170"/><text class="nt" x="1000" y="168" style="font-size:14px">Gate</text><text class="ns" x="1000" y="184" id="gates" style="font-size:11px">plain code</text></g>
+      <g class="node" id="n-report"><rect x="1092" y="128" width="94" height="84" rx="14"/><text class="nt" x="1139" y="165">Report</text><text class="ns" x="1139" y="185" id="reps">aggregates</text></g>
+      <g class="node llm" id="n-llm"><rect x="920" y="396" width="160" height="80" rx="14"/><text class="nt" x="1000" y="432">LLM investigator</text><text class="ns" x="1000" y="452">one bounded call</text></g>
+      <g class="node human" id="n-human"><rect x="560" y="396" width="170" height="80" rx="14"/><text class="nt" x="645" y="432">Human approval</text><text class="ns" x="645" y="452">signs the new contract</text></g>
+
+      <g id="packets"></g>
+    </svg>
+    </div>
+    <div class="cap" aria-live="off">
+      <div class="num" id="cap-n">1</div>
+      <div class="txt"><b id="cap-t">Contract and approval</b><span id="cap-d"></span></div>
+    </div>
+    <div class="ctl">
+      <span class="swipe">Swipe the diagram sideways to see all of it.</span>
+      <button class="btn" id="play" type="button" aria-pressed="true">Pause</button>
+      <div class="dots" id="dots" role="group" aria-label="Jump to step"></div>
+      <div class="legend">
+        <span><i style="background:var(--accent-deep)"></i>request</span>
+        <span><i style="background:var(--sum)"></i>summary</span>
+        <span><i style="background:var(--llm)"></i>LLM</span>
+        <span><i style="background:var(--human)"></i>human</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="steps">
+  <div class="eyebrow">Step by step</div>
+  <h2>What each step does</h2>
+  <p class="lead">Ten steps from raw files to a report. Each card says what crosses the wire and where the code lives. Press a number to replay that step in the diagram.</p>
+  <div class="stages">
+
+    <div class="card stage">
+      <h3><button class="n" type="button" data-step="0" aria-label="Show step 1 in the diagram">1</button>Prepare the site data</h3>
+      <p>The operator reads the GDSC2 response workbook, the Cell Model Passports model list and the driver-mutation summary, keeps PLX-4720, and splits cell lines into three sites by <code>sha256(SANGER_MODEL_ID) % 3</code>. The split never looks at drug response. Each site gets a numeric matrix with no model IDs in it.</p>
+      <div class="gives none"><b>Crosses the wire</b> nothing, this runs on the data side</div>
+      <div class="meta"><span class="mono">cohortlens_shared/gdsc.py</span><span class="mono">prepare_gdsc_snapshots</span></div>
+    </div>
+
+    <div class="card stage">
+      <h3><button class="n" type="button" data-step="0" aria-label="Show step 2 in the diagram">2</button>Write the contract, approve its hash</h3>
+      <p>The question is a frozen contract: compound, variant, outcome, covariates, estimator, release policy. Its canonical JSON is hashed with SHA-256, and a time-limited approval is bound to that hash. Change one field and the approval no longer matches.</p>
+      <div class="gives"><b>Produces</b> <code>AnalysisContract</code> <code>Approval</code></div>
+      <div class="meta"><span class="mono">cohortlens_shared/schemas.py</span><span class="mono">default_gdsc_contract · contract_digest</span></div>
+    </div>
+
+    <div class="card stage">
+      <h3><button class="n" type="button" data-step="1" aria-label="Show step 3 in the diagram">3</button>Submit the run</h3>
+      <p>The contract and approval go to Flower SuperGrid as a run config. The ServerApp refuses leftover placeholders, checks the approval (hash, study, analysis, expiry) and waits for three SuperNodes with a bounded deadline.</p>
+      <div class="gives"><b>Crosses the wire</b> run-config TOML with the contract and approval inlined, no file paths</div>
+      <div class="meta"><span class="mono">cohortlens_analytics/server_app.py</span></div>
+    </div>
+
+    <div class="card stage">
+      <h3><button class="n" type="button" data-step="1" aria-label="Show step 4 in the diagram">4</button>Preflight at every site</h3>
+      <p>Each node checks the request for itself. It re-validates the approval, compares the analysis against a hard-coded allowlist, and confirms it has enough rows in each group. It answers READY or one of seven refusal codes.</p>
+      <div class="gives"><b>Crosses the wire</b> <code>StudyPreflightRequest</code> → <code>PreflightReply</code></div>
+      <div class="meta"><span class="mono">cohortlens_analytics/client_app.py</span><span class="mono">handle_preflight</span></div>
+    </div>
+
+    <div class="card stage">
+      <h3><button class="n" type="button" data-step="2" aria-label="Show step 5 in the diagram">5</button>Local regression</h3>
+      <p>Only READY nodes get the question. Each one loads its own matrix, fits ordinary least squares, and computes an HC3 robust standard error for the BRAF V600E coefficient. Rows and design matrices never leave the node.</p>
+      <div class="gives"><b>Crosses the wire</b> <code>AssociationRequest</code> → <code>AssociationReply</code> with β, SE, N and the contract hash</div>
+      <div class="meta"><span class="mono">client_app.py · handle_association</span><span class="mono">statistics.py · fit_genotype_ols_hc3</span></div>
+    </div>
+
+    <div class="card stage">
+      <h3><button class="n" type="button" data-step="3" aria-label="Show step 6 in the diagram">6</button>Validate and pool</h3>
+      <p>The ServerApp ties every reply to its node, study, query and contract hash. A missing, invalid or duplicate reply is recorded as such, never silently dropped. With two or more estimates it runs an inverse-variance fixed-effect meta-analysis and reports β, a 95% interval, Cochran Q and I².</p>
+      <div class="gives"><b>Releases</b> <code>AssociationResult</code> as one framed log line</div>
+      <div class="meta"><span class="mono">server_app.py · run_phase1</span><span class="mono">statistics.py · fixed_effect_meta</span></div>
+    </div>
+
+    <div class="card stage">
+      <h3><button class="n" type="button" data-step="4" aria-label="Show step 7 in the diagram">7</button>Collect, then gate</h3>
+      <p>The operator pulls the run log and accepts exactly one schema-valid result frame for the expected study and hash. A plain function then decides what happens next: stop, finish, or investigate. No model is involved in that decision.</p>
+      <div class="gives"><b>Produces</b> <code>InvestigationDecision</code></div>
+      <div class="meta"><span class="mono">cohortlens_operator/result_frames.py</span><span class="mono">schemas.py · investigation_decision_from_result</span></div>
+    </div>
+
+    <div class="card stage">
+      <h3><button class="n" type="button" data-step="6" aria-label="Show step 8 in the diagram">8</button>Report, or ask for a proposal</h3>
+      <p>Site-level results are stripped first. If the sites agree, one LLM call writes a short report. If they disagree, one LLM call receives the pooled numbers and must return a proposal in a fixed schema: stratify by melanoma versus other lineages. One repair retry, then a hard failure.</p>
+      <div class="gives"><b>Crosses the wire</b> <code>AgentEvidence</code> → <code>ReporterOutput</code> or <code>FollowUpProposal</code></div>
+      <div class="meta"><span class="mono">cohortlens_agent/agent_app.py</span></div>
+    </div>
+
+    <div class="card stage">
+      <h3><button class="n" type="button" data-step="7" aria-label="Show step 9 in the diagram">9</button>A human approves the follow-up</h3>
+      <p>The proposal authorizes nothing. The operator compiles the only permitted follow-up contract, tied to the hash of the first result, and signs a fresh approval for its new hash. Without that, no second run exists.</p>
+      <div class="gives"><b>Produces</b> a new <code>AnalysisContract</code> + <code>Approval</code></div>
+      <div class="meta"><span class="mono">schemas.py · compile_stratified_followup</span></div>
+    </div>
+
+    <div class="card stage">
+      <h3><button class="n" type="button" data-step="8" aria-label="Show step 10 in the diagram">10</button>Stratified second run and report</h3>
+      <p>The same preflight, regression and pooling run once per stratum: <code>skcm</code> and <code>non_skcm</code>. Each node selects its rows locally and refits. The result is marked exploratory, and a final LLM call summarizes it from aggregates only.</p>
+      <div class="gives"><b>Releases</b> <code>Phase2AssociationResult</code> → <code>ReporterOutput</code></div>
+      <div class="meta"><span class="mono">server_app.py · run_phase2</span><span class="mono">statistics.py · context_stratum</span></div>
+    </div>
+
+  </div>
+</section>
+
+<section id="boundaries">
+  <div class="eyebrow">Disclosure</div>
+  <h2>Who sees what</h2>
+  <p class="lead">The data gets smaller at every hop. Three lines are enforced in code, and each party only receives what is listed in its column.</p>
+  <div class="see">
+    <div class="who">
+      <h3>SuperNode</h3>
+      <p class="role">one per site, holds the data</p>
+      <ul>
+        <li class="rows">Cell-line rows and outcomes</li>
+        <li class="site">Its own β, SE, N</li>
+        <li>Contract and approval</li>
+      </ul>
+    </div>
+    <div class="wall" style="--c:var(--stop)" aria-hidden="true">
+      <div class="lane blocked" style="--d:var(--stop)"><i></i></div>
+      <div class="lane" style="--d:var(--sum)"><i style="--dl:.5s"></i></div>
+      <div class="lane blocked" style="--d:var(--stop)"><i style="--dl:1.2s"></i></div>
+    </div>
+    <div class="who">
+      <h3>Coordinator</h3>
+      <p class="role">ServerApp and operator</p>
+      <ul>
+        <li class="no">Cell-line rows and outcomes</li>
+        <li class="site">Each site's β, SE, N and status</li>
+        <li class="net">Pooled β, 95% CI, I²</li>
+      </ul>
+    </div>
+    <div class="wall" style="--c:var(--llm)" aria-hidden="true">
+      <div class="lane blocked" style="--d:var(--sum)"><i style="--dl:.3s"></i></div>
+      <div class="lane" style="--d:var(--accent-deep)"><i style="--dl:.9s"></i></div>
+      <div class="lane blocked" style="--d:var(--sum)"><i style="--dl:1.6s"></i></div>
+    </div>
+    <div class="who">
+      <h3>LLM call</h3>
+      <p class="role">Flower Endeavor, one call per run</p>
+      <ul>
+        <li class="no">Cell-line rows and outcomes</li>
+        <li class="no">Each site's β, SE, N</li>
+        <li class="net">Pooled β, 95% CI, I²</li>
+        <li>Hash of the result, allowed actions</li>
+      </ul>
+    </div>
+    <div class="wall" style="--c:var(--human)" aria-hidden="true">
+      <div class="lane" style="--d:var(--llm)"><i style="--dl:.2s"></i></div>
+      <div class="lane blocked" style="--d:var(--llm)"><i style="--dl:1.1s"></i></div>
+    </div>
+    <div class="who">
+      <h3>Human operator</h3>
+      <p class="role">the only one who can authorize</p>
+      <ul>
+        <li>The LLM's proposal, schema-checked</li>
+        <li>The new contract and its hash</li>
+        <li>Decides whether a second run happens</li>
+      </ul>
+    </div>
+  </div>
+  <div class="walls-key">
+    <div class="card" style="--c:var(--stop)"><h3><i></i>Rows stay on the node</h3><p>Only an allowlisted <code>AssociationReply</code> leaves a site. Payloads are capped at 64 KiB.</p></div>
+    <div class="card" style="--c:var(--llm)"><h3><i></i>The LLM gets aggregates</h3><p><code>AgentEvidence</code> has no field for site-level results, so they cannot be passed along by mistake.</p></div>
+    <div class="card" style="--c:var(--human)"><h3><i></i>A proposal is not permission</h3><p>A second run needs a new contract hash and a fresh, expiring approval from a person.</p></div>
+  </div>
+</section>
+
+<section id="gate">
+  <div class="eyebrow">The decision</div>
+  <h2>A gate made of plain code</h2>
+  <p class="lead">I² measures how much the sites disagree beyond chance. The rule that reads it is a few lines of ordinary code with three outcomes. Move the slider to see it flip at 0.50.</p>
+  <div class="gate">
+    <div class="card">
+      <label for="i2">Heterogeneity across sites</label>
+      <div class="i2"><span id="i2v">0.00</span><small>I²</small></div>
+      <div class="track">
+        <div class="thr"></div>
+        <input type="range" id="i2" min="0" max="1" step="0.01" value="0">
+        <div class="ends"><span>0 · sites agree</span><span>1 · sites disagree</span></div>
+      </div>
+      <label id="est-l">Usable site estimates</label>
+      <div class="seg" role="group" aria-labelledby="est-l">
+        <button type="button" data-est="3" aria-pressed="true">3</button>
+        <button type="button" data-est="2" aria-pressed="false">2</button>
+        <button type="button" data-est="1" aria-pressed="false">1</button>
+      </div>
+      <div class="presets">
+        <button class="btn" type="button" data-preset="0">GDSC run · I² = 0</button>
+        <button class="btn" type="button" data-preset="0.971">Synthetic run · I² = 0.971</button>
+      </div>
+    </div>
+    <div class="card outs" id="outs">
+      <div class="out stp" data-o="stop"><i class="pip"></i><div><b>STOP_INSUFFICIENT_EVIDENCE</b><span>Fewer than two estimates. Nothing to pool, nothing more runs.</span></div></div>
+      <div class="out fin" data-o="finish"><i class="pip"></i><div><b>FINISH_COMPATIBLE</b><span>I² below 0.50. Write the report. No second query is allowed.</span></div></div>
+      <div class="out inv" data-o="investigate"><i class="pip"></i><div><b>INVESTIGATE</b><span>I² at 0.50 or above. Send aggregates to the LLM for one bounded proposal.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="tech">
+  <div class="eyebrow">Technical details</div>
+  <h2>How it is built</h2>
+  <p class="lead">Seven decisions that shape the code.</p>
+  <div class="tools">
+    <div class="card tool">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+      <h3>Hash-bound, frozen contracts</h3>
+      <p>Every schema is a frozen Pydantic model that forbids extra fields and NaN. The contract's canonical JSON (sorted keys, compact) is hashed with SHA-256, and the approval carries that hash plus a timezone-aware expiry.</p>
+    </div>
+    <div class="card tool">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.800-1.200-8-4.500-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <h3>Sites re-check everything</h3>
+      <p>A valid approval is not enough. Each node validates it again and compares the analysis to a closed allowlist, then enforces minimum sample size and group support before computing anything.</p>
+    </div>
+    <div class="card tool">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M7 15l4-5 3 2 5-6"/></svg></div>
+      <h3>OLS-HC3 in plain NumPy</h3>
+      <p>The regression and its heteroskedasticity-robust standard error are written by hand, so the deployed bundle needs neither SciPy nor statsmodels. Tests match statsmodels 0.14.5 to a relative tolerance of 1e-10.</p>
+    </div>
+    <div class="card tool">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h6M4 12h6M4 18h6"/><path d="M10 6c5 0 4 6 10 6M10 18c5 0 4-6 10-6M10 12h10"/></svg></div>
+      <h3>Fixed-effect meta-analysis</h3>
+      <p>Site estimates are combined by inverse-variance weighting, with a 95% interval, Cochran Q and I². Missing, invalid and duplicate replies are tracked as explicit states, so a partial result is reported as partial.</p>
+    </div>
+    <div class="card tool">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/></svg></div>
+      <h3>A closed-world LLM step</h3>
+      <p>The model gets no tools. It makes a single call, sees aggregates, and must answer in a strict schema with literal-typed actions. The output is checked against the study, analysis and parent hash. One repair attempt, then the run fails.</p>
+    </div>
+    <div class="card tool">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></div>
+      <h3>Results travel as log frames</h3>
+      <p>Each app prints one framed line, <code>COHORTLENS_RESULT_V1 {json}</code>. The operator extracts exactly one valid frame from the run log. Identical replays are accepted, conflicting frames fail.</p>
+    </div>
+    <div class="card tool">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="8" height="12" rx="2"/><rect x="13" y="6" width="8" height="12" rx="2"/></svg></div>
+      <h3>Two bundles, one bridge</h3>
+      <p>A Flower App Bundle holds either a ServerApp with its ClientApp or an AgentApp, not all three. So analytics and the LLM step ship separately, and the human operator is the only link between them.</p>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="eyebrow">Recorded runs</div>
+  <h2>What actually ran</h2>
+  <p class="lead">Two recorded deployments on Flower SuperGrid, each with three registered SuperNodes.</p>
+  <div class="results">
+    <div class="card">
+      <h3>Public GDSC2 data</h3>
+      <p class="q">Is BRAF V600E associated with response to PLX-4720 across three sites?</p>
+      <div class="kv">
+        <div><b>3 of 3</b>SuperNodes replied</div>
+        <div><b>938</b>cell lines (291 / 306 / 341)</div>
+        <div><b>0</b>I², no disagreement</div>
+      </div>
+      <div class="ci">
+        <svg viewBox="0 0 520 78" role="img" aria-label="Pooled coefficient minus 2.3148 with 95 percent interval from minus 2.8232 to minus 1.8063, entirely below zero">
+          <line x1="20" y1="40" x2="500" y2="40" stroke="var(--line)" stroke-width="1.5"/>
+          <line x1="440" y1="14" x2="440" y2="52" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="4 4"/>
+          <line x1="44.750" y1="40" x2="187.120" y2="40" stroke="var(--accent-deep)" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="115.930" cy="40" r="7" fill="var(--accent-deep)" stroke="var(--paper)" stroke-width="2"/>
+          <text x="116" y="22" text-anchor="middle" style="font-weight:600;fill:var(--ink);font-size:12.5px">β = −2.3148</text>
+          <text x="20" y="68" text-anchor="middle">−3</text><text x="160" y="68" text-anchor="middle">−2</text><text x="300" y="68" text-anchor="middle">−1</text><text x="440" y="68" text-anchor="middle">0</text>
+          <line x1="20" y1="36" x2="20" y2="44" stroke="var(--faint)"/><line x1="160" y1="36" x2="160" y2="44" stroke="var(--faint)"/><line x1="300" y1="36" x2="300" y2="44" stroke="var(--faint)"/>
+        </svg>
+      </div>
+      <span class="tag">FINISH_COMPATIBLE</span>
+      <p class="foot">Pooled β in ln µM, 95% CI [−2.8232, −1.8063]. Lower LN_IC50 means more measured sensitivity in this assay. The sites agreed, so the gate stopped after one round and no follow-up was run.</p>
+    </div>
+    <div class="card">
+      <h3>Synthetic data</h3>
+      <p class="q">Three sites of 1,500 generated rows each, built to disagree.</p>
+      <div class="kv">
+        <div><b>0.5108</b>pooled β, first run</div>
+        <div><b>97.1%</b>I², strong disagreement</div>
+        <div><b>3 of 3</b>sites in both strata</div>
+      </div>
+      <div class="chain">
+        <span class="tag inv">INVESTIGATE</span><span class="ar">→</span>
+        <span>LLM proposal</span><span class="ar">→</span>
+        <span>operator approval</span><span class="ar">→</span>
+        <span>stratified run</span>
+      </div>
+      <div class="kv" style="grid-template-columns:1fr 1fr">
+        <div><b>0.140</b>stratum 1 β, I² 0%</div>
+        <div><b>0.862</b>stratum 2 β, I² 0%</div>
+      </div>
+      <p class="foot">Splitting by context removed the disagreement inside each stratum. Two earlier live attempts failed strict validation and were stopped, which is the design working as intended.</p>
+    </div>
+  </div>
+  <div class="note"><b>Read this before the numbers.</b> The full investigate, approve and stratify loop has run live only on synthetic data. On real GDSC2 data the three sites agreed, so the pipeline correctly stopped after the first round.</div>
+  <div class="nums">
+    <div class="card"><b>59</b><span>offline tests, about 2.5 s</span></div>
+    <div class="card"><b>20</b><span>strict Pydantic schemas</span></div>
+    <div class="card"><b>2</b><span>Flower App Bundles</span></div>
+    <div class="card"><b>11</b><span>operator CLI subcommands</span></div>
+    <div class="card"><b>~3,200</b><span>lines of Python, plus tests</span></div>
+  </div>
+</section>
+
+<section id="limits">
+  <div class="eyebrow">Limits</div>
+  <h2>What this is not</h2>
+  <p class="lead">The project demonstrates a workflow. It does not make a scientific or a privacy claim beyond what is listed here.</p>
+  <div class="limits">
+    <div class="card">
+      <h3>About the federation</h3>
+      <ul>
+        <li><b>The federation is emulated.</b> The three sites are hash partitions of one public dataset, not independent labs.</li>
+        <li><b>No secure aggregation or differential privacy.</b> Rows stay local, but that is not a confidentiality guarantee.</li>
+        <li><b>The coordinator sees site summaries.</b> Result frames are also visible to anyone who can read the run logs.</li>
+        <li><b>A dishonest site would go unnoticed.</b> Hashes and approvals prevent protocol mistakes. They do not prove a site computed honestly.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>About the science and the LLM</h3>
+      <ul>
+        <li><b>Cell lines, not patients.</b> The data is public in-vitro drug-response measurements.</li>
+        <li><b>Associations, not clinical findings.</b> Nothing here shows causality, clinical benefit or a validated biomarker.</li>
+        <li><b>The LLM step is one schema-bounded call.</b> It has no tools and almost no latitude. It is not a tool-using agent.</li>
+        <li><b>The follow-up is exploratory.</b> It reuses the same records, so it is not a replication.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div>CohortLens · personal project · <a href="https://github.com/apzl/cohort-lens">github.com/apzl/cohort-lens</a></div>
+      <ul class="stack">
+        <li>Python 3.11–3.12</li><li>Flower 1.37.0</li><li>Pydantic 2.13</li><li>NumPy 2.4</li><li>OpenAI SDK (Responses API)</li><li>Flower Endeavor</li><li>pytest</li><li>uv</li>
+      </ul>
+    </div>
+    <div>Data: GDSC2 release 8.5 and Sanger Cell Model Passports.<br>Apache-2.0.</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  var $=function(id){return document.getElementById(id)};
+  var D=16800;
+  var STEPS=[
+    {t:0,    title:'Contract and approval', text:'The operator writes one fixed question as a contract and binds a time-limited approval to its SHA-256 hash.', on:['n-op']},
+    {t:1500, title:'Preflight', text:'The ServerApp checks the approval and asks three SuperNodes if they can run it. Each node re-checks against its own allowlist.', on:['n-server']},
+    {t:3100, title:'Local regression', text:'Each node fits OLS with HC3 robust errors on its own rows. Only β, SE and N come back. The rows never leave the node.', on:['n-s1','n-s2','n-s3','b-rows']},
+    {t:5200, title:'Meta-analysis', text:'The ServerApp pools the three estimates with inverse-variance weights and measures disagreement between sites as I².', on:['n-meta']},
+    {t:6600, title:'Gate: sites agree', text:'A deterministic gate reads I². Below 0.50 the sites agree: write the report and stop. No second query is allowed.', on:['n-gate']},
+    {t:8000, title:'Gate: sites disagree', text:'At 0.50 or above the gate opens one path: send the pooled numbers, and nothing site-level, to a single LLM call.', on:['n-gate']},
+    {t:9400, title:'Bounded LLM proposal', text:'The model sees network aggregates only and must return one schema-checked proposal: compare melanoma with other lineages.', on:['n-llm','b-agg']},
+    {t:11000,title:'Human approval', text:'The LLM proposes, a human authorizes. The operator signs a new contract hash before anything runs again.', on:['n-human','b-auth']},
+    {t:12800,title:'Stratified second run', text:'The same loop runs once per stratum, skcm and non_skcm. Rows still stay on each node and only summaries return.', on:['n-server','n-s1','n-s2','n-s3','n-meta','b-rows']},
+    {t:15000,title:'Follow-up report', text:'Two stratum results, marked exploratory, go to a final report written from aggregates only.', on:['n-report']}
+  ];
+  var P=[
+    {e:'e1',a:500,b:1400,k:'req',l:'contract + approval'},
+    {e:'e2a',a:1700,b:2500,k:'req',l:'preflight'},{e:'e2b',a:1700,b:2500,k:'req'},{e:'e2c',a:1700,b:2500,k:'req'},
+    {e:'e2a',a:3100,b:3800,k:'req',l:'question'},{e:'e2b',a:3100,b:3800,k:'req'},{e:'e2c',a:3100,b:3800,k:'req'},
+    {e:'e3a',a:4400,b:5200,k:'sum',l:'β, SE, N'},{e:'e3b',a:4400,b:5200,k:'sum'},{e:'e3c',a:4400,b:5200,k:'sum'},
+    {e:'e4',a:6000,b:6600,k:'sum'},
+    {e:'e5',a:7000,b:7700,k:'sum'},
+    {e:'e6',a:8300,b:9400,k:'llm',l:'aggregates',side:1},
+    {e:'e7',a:10100,b:11000,k:'llm',l:'proposal'},
+    {e:'e8',a:11600,b:12800,k:'human',l:'new hash'},
+    {e:'e2a',a:12900,b:13550,k:'req',l:'per stratum'},{e:'e2b',a:12900,b:13550,k:'req'},{e:'e2c',a:12900,b:13550,k:'req'},
+    {e:'e2a',a:13100,b:13750,k:'req'},{e:'e2b',a:13100,b:13750,k:'req'},{e:'e2c',a:13100,b:13750,k:'req'},
+    {e:'e3a',a:14000,b:14700,k:'sum',l:'β, SE, N × 2'},{e:'e3b',a:14000,b:14700,k:'sum'},{e:'e3c',a:14000,b:14700,k:'sum'},
+    {e:'e3a',a:14200,b:14900,k:'sum'},{e:'e3b',a:14200,b:14900,k:'sum'},{e:'e3c',a:14200,b:14900,k:'sum'},
+    {e:'e9',a:15100,b:16100,k:'sum',l:'2 strata'}
+  ];
+  var layer=$('packets'), edges={}, lens={};
+  P.forEach(function(p){
+    if(!edges[p.e]){edges[p.e]=$(p.e);lens[p.e]=edges[p.e].getTotalLength();}
+    var g=document.createElementNS(NS,'g');g.setAttribute('class','pk '+p.k);g.style.display='none';
+    if(p.l){
+      var w=p.l.length*6.4+16, r=document.createElementNS(NS,'rect'), t=document.createElementNS(NS,'text');
+      var ox=p.side?14:-w/2, oy=p.side?-10:-31;
+      r.setAttribute('x',ox);r.setAttribute('y',oy);r.setAttribute('width',w);r.setAttribute('height',20);r.setAttribute('rx',10);
+      t.setAttribute('x',ox+w/2);t.setAttribute('y',oy+14);t.textContent=p.l;
+      g.appendChild(r);g.appendChild(t);
+    }
+    var c=document.createElementNS(NS,'circle');c.setAttribute('r',7);g.appendChild(c);
+    layer.appendChild(g);p.g=g;
+  });
+  var hl=['n-op','n-server','n-s1','n-s2','n-s3','n-meta','n-gate','n-report','n-llm','n-human','b-rows','b-agg','b-auth'].map($);
+  function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
+  function stepAt(t){var i=0;for(var k=0;k<STEPS.length;k++)if(t>=STEPS[k].t)i=k;return i}
+  var lastStep=-1, dotEls=[];
+  function render(t){
+    t=((t%D)+D)%D;
+    var si=stepAt(t), s=STEPS[si], on={};
+    s.on.forEach(function(id){on[id]=1});
+    if(t>=2500&&t<3100){on['n-s1']=on['n-s2']=on['n-s3']=1}
+    if(t>=7700&&t<8000){on['n-report']=1}
+    hl.forEach(function(el){el.classList.toggle('on',!!on[el.id])});
+    var eon={};
+    P.forEach(function(p){
+      if(t>=p.a&&t<=p.b){
+        var pt=edges[p.e].getPointAtLength(ease((t-p.a)/(p.b-p.a))*lens[p.e]);
+        p.g.setAttribute('transform','translate('+pt.x.toFixed(1)+','+pt.y.toFixed(1)+')');
+        p.g.style.display='';eon[p.e]=1;
+      }else p.g.style.display='none';
+    });
+    for(var id in edges)edges[id].classList.toggle('on',!!eon[id]);
+    var ns=t>=2500&&t<3800?'READY':t>=3800&&t<5200?'fitting OLS-HC3':t>=13500&&t<14900?'fit per stratum':'local rows';
+    $('s1s').textContent=$('s2s').textContent=$('s3s').textContent=ns;
+    $('gates').textContent=t>=6600&&t<8000?'I² < 0.50':t>=8000&&t<11000?'I² ≥ 0.50':'plain code';
+    $('reps').textContent=t>=7700&&t<8000?'first result':t>=16100?'follow-up':'aggregates';
+    if(si!==lastStep){
+      lastStep=si;
+      $('cap-n').textContent=si+1;$('cap-t').textContent=s.title;$('cap-d').textContent=s.text;
+      dotEls.forEach(function(d,i){d.classList.toggle('on',i===si)});
+    }
+  }
+  window.__duration=D;
+  window.__seek=function(ms){render(ms)};
+
+  var capture=/[?&]capture=1/.test(location.search);
+  if(capture){
+    document.documentElement.setAttribute('data-theme','light');
+    var root=document.createElement('div');root.id='capture-root';
+    root.appendChild($('diagram'));document.body.appendChild(root);
+    document.body.classList.add('capture');
+    render(0);window.__ready=true;return;
+  }
+
+  // step dots + play/pause
+  var dots=$('dots');
+  STEPS.forEach(function(s,i){
+    var b=document.createElement('button');b.type='button';b.setAttribute('aria-label','Step '+(i+1)+': '+s.title);b.title=s.title;
+    b.addEventListener('click',function(){jump(i)});dots.appendChild(b);dotEls.push(b);
+  });
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var playing=!reduce, t0=performance.now(), cur=0, btn=$('play');
+  function setBtn(){btn.textContent=playing?'Pause':'Play';btn.setAttribute('aria-pressed',playing?'true':'false')}
+  function frame(now){
+    if(playing){cur=(now-t0)%D;render(cur);}
+    requestAnimationFrame(frame);
+  }
+  function jump(i){
+    var s=STEPS[i], end=(STEPS[i+1]?STEPS[i+1].t:D);
+    cur=playing?s.t:Math.min(end-100,s.t+(end-s.t)*0.62);
+    t0=performance.now()-cur;lastStep=-1;render(cur);
+  }
+  btn.addEventListener('click',function(){playing=!playing;t0=performance.now()-cur;setBtn()});
+  document.querySelectorAll('[data-step]').forEach(function(b){
+    b.addEventListener('click',function(){jump(+b.getAttribute('data-step'));$('diagram').scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'})});
+  });
+  setBtn();
+  if(reduce){cur=4000;render(cur);}else render(0);
+  requestAnimationFrame(frame);
+
+  // gate widget
+  var i2=$('i2'), est=3, outs=document.querySelectorAll('#outs .out'), segs=document.querySelectorAll('[data-est]');
+  function gate(){
+    var v=parseFloat(i2.value), o=est<2?'stop':v>=0.5?'investigate':'finish';
+    $('i2v').textContent=v.toFixed(2);
+    outs.forEach(function(el){el.classList.toggle('on',el.getAttribute('data-o')===o)});
+  }
+  i2.addEventListener('input',gate);
+  segs.forEach(function(b){b.addEventListener('click',function(){
+    est=+b.getAttribute('data-est');segs.forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});gate();
+  })});
+  document.querySelectorAll('[data-preset]').forEach(function(b){b.addEventListener('click',function(){
+    i2.value=b.getAttribute('data-preset');est=3;segs.forEach(function(x){x.setAttribute('aria-pressed',x.getAttribute('data-est')==='3'?'true':'false')});gate();
+  })});
+  gate();
+})();
+</script>
+</body>
+</html>

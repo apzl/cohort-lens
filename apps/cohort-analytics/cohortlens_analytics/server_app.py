@@ -1,4 +1,4 @@
-"""Coordinator workflows for CohortLens Phase 0 and Phase 1."""
+"""Coordinator (ServerApp): preflight, association fan-out, validation and meta-analysis."""
 
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ class Phase0Config:
 
 @dataclass(frozen=True)
 class Phase1Config:
-    """Approved Phase 1 contract plus bounded transport settings."""
+    """Approved analysis contract plus bounded transport settings."""
 
     contract: AnalysisContract
     approval: Approval
@@ -99,7 +99,7 @@ def phase1_config_from_context(context: Context) -> Phase1Config:
         REQUIRED_INPUT_PREFIX
     ):
         raise ValueError(
-            "Phase 1 requires operator-generated contract-json and approval-json"
+            "A run requires operator-generated contract-json and approval-json"
         )
     contract = (
         default_phase1_contract()
@@ -459,7 +459,10 @@ def run_phase1(
         status=status,
         phenotype_unit=config.contract.phenotype_unit,
         data_provenance=(
-            "GDSC2_8.5_CMP_DRIVER_SUMMARY_PINNED"
+            "GDSC2_8.5_LINEAGE_ENRICHED_SIM_V1"
+            if config.contract.site_roster_id
+            == "GDSC2_LINEAGE_ENRICHED3_SIM_V1"
+            else "GDSC2_8.5_CMP_DRIVER_SUMMARY_PINNED"
             if config.contract.variant.reference_build == "CMP_DRIVER_SUMMARY_PINNED"
             else "COHORTLENS_PUBLIC_GENERATOR_V1"
         ),
@@ -478,7 +481,7 @@ def run_phase2(
         ("context_0", "context_1"),
         ("non_skcm", "skcm"),
     }:
-        raise ValueError("Phase 2 requires an approved pair of fixed strata")
+        raise ValueError("A follow-up requires an approved pair of fixed strata")
     if config.contract.parent_result_hash != proposal.parent_result_hash:
         raise ValueError("approved contract is not bound to the proposal parent result")
     expected_action = (
@@ -513,17 +516,17 @@ def run_phase2(
 
 @app.main()
 def main(grid: Grid, context: Context) -> None:
-    """Execute the approved primary or bounded Phase 2 association workflow."""
+    """Execute the approved primary or bounded follow-up association workflow."""
     config = phase1_config_from_context(context)
     proposal_payload = context.run_config.get("followup-proposal-json")
     if config.contract.strata:
         if not isinstance(proposal_payload, str) or proposal_payload.startswith(REQUIRED_INPUT_PREFIX):
-            raise ValueError("Phase 2 requires the exact operator-approved followup proposal")
+            raise ValueError("A follow-up requires the exact operator-approved followup proposal")
         proposal = FollowUpProposal.model_validate_json(proposal_payload)
         result = run_phase2(grid, config, proposal)
         log(
             INFO,
-            "CohortLens Phase 2 finished with %s strata (%s)",
+            "CohortLens follow-up finished with %s strata (%s)",
             len(result.strata_results),
             result.status,
         )
@@ -531,7 +534,7 @@ def main(grid: Grid, context: Context) -> None:
         result = run_phase1(grid, config)
         log(
             INFO,
-            "CohortLens Phase 1 finished with %s/%s estimates (%s)",
+            "CohortLens primary run finished with %s/%s estimates (%s)",
             result.estimated_sites,
             result.expected_sites,
             result.status,

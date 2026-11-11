@@ -1,4 +1,4 @@
-"""Static, dependency-free HTML reporting for released Phase 1 results."""
+"""Static, dependency-free HTML reporting for released primary and follow-up results."""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def render_report(
     )
     return f"""<!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>CohortLens Phase 1 report</title></head>
+<head><meta charset="utf-8"><title>CohortLens primary report</title></head>
 <body>
 <h1>CohortLens association</h1>
 <dl>
@@ -88,9 +88,9 @@ def render_phase2_report(result: Phase2AssociationResult) -> str:
         f"<tr><td>{escape(item.site_results[0].stratum_id if item.site_results else stratum)}</td><td>{'' if item.beta_meta is None else f'{item.beta_meta:.6f}'}</td><td>{'' if item.standard_error_meta is None else f'{item.standard_error_meta:.6f}'}</td><td>{escape(item.status)}</td></tr>"
         for stratum, item in zip(("context_0", "context_1"), result.strata_results, strict=True)
     )
-    return f"""<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>CohortLens Phase 2 report</title></head><body>
-<h1>CohortLens Phase 2 exploratory context stratification</h1>
+    return f"""<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>CohortLens follow-up report</title></head><body>
+<h1>CohortLens exploratory stratified follow-up</h1>
 <dl><dt>Follow-up contract</dt><dd>{escape(result.contract_hash)}</dd><dt>Parent result</dt><dd>{escape(result.parent_result_hash)}</dd><dt>Approved proposal</dt><dd>{escape(result.proposal_hash)}</dd></dl>
 <p>This is one exploratory, predeclared follow-up. It does not replace the primary result, establish causation, or provide independent replication.</p>
-<table><thead><tr><th>Context stratum</th><th>Fixed-effect estimate</th><th>SE</th><th>Status</th></tr></thead><tbody>{rows}</tbody></table>
+<table><thead><tr><th>Stratum</th><th>Fixed-effect estimate</th><th>SE</th><th>Status</th></tr></thead><tbody>{rows}</tbody></table>
 <p>Only allowlisted site summaries were released; individual rows were not sent. Summary releases remain sensitive and honest local computation is not proven.</p></body></html>"""

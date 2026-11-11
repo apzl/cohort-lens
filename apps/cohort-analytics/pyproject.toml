@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "cohortlens-analytics"
 version = "0.1.0"
-description = "The CohortLens federated analytics Flower App"
+description = "Federated PLX-4720 and BRAF p.V600E analysis over public GDSC2 data"
 license = { file = "LICENSE" }
 requires-python = ">=3.11,<4.0"
 dependencies = [

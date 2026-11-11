@@ -1,211 +1,177 @@
 # CohortLens
 
-CohortLens is a Flower workflow for a bounded public-data pharmacogenomics
-study. It evaluates whether **BRAF p.V600E** is associated with GDSC2
-**PLX-4720** response (`LN_IC50`) across three deterministic virtual
-laboratories, then conditionally considers a predeclared lineage follow-up.
+Federated analytics on [Flower](https://flower.ai): one approved statistical question travels to
+every site, each site answers it on its own data, and only three numbers per site come back.
+If the sites disagree, a schema-bounded LLM proposes one predeclared follow-up and a human signs it off.
 
-This is an emulated federation over already-public cancer cell-line data, not
-a patient study, clinical trial, or the original GDSC contributing laboratories.
-Its data mode is `PUBLIC_GDSC_EMULATED_FEDERATION`; its intended execution mode
-is deployment SuperNodes.
+![Pipeline](docs/pipeline.gif)
 
-## Fixed study
+Step-by-step explainer with animated diagrams: [apzl.github.io/cohort-lens](https://apzl.github.io/cohort-lens/).
 
-The preparation manifest records GDSC2 release `8.5-27Oct23`, source-file
-checksums, compound 1036 (`PLX-4720`), BRAF p.V600E presence, and `LN_IC50` in
-logged micromolar units. The approved contract binds the supported compound,
-biomarker, response, statistical policy, roster, and release policy. Lower
-`LN_IC50` means greater measured sensitivity in this assay.
+## What it is
 
-Preparation consumes three source-side inputs: the GDSC2 fitted-response
-workbook, Cell Model Passports model list, and the compact Cell Model Passports
-driver-mutation summary. It retains mutation-covered models with BRAF p.V600E
-or no recorded BRAF driver mutation, excludes other recorded BRAF driver
-alterations, and adjusts the primary model for SKCM versus other lineages.
+Several data holders often want to answer the same question but cannot pool their records.
+CohortLens sends the question instead. A coordinator distributes a hash-bound analysis contract,
+each site fits the same regression locally and returns an effect, a robust standard error and a
+count, and the coordinator combines them with a fixed-effect meta-analysis.
 
-The compact mutation summary is an important limitation: the comparator is
-**not** definitive BRAF wild type. A full mutation-call dataset is needed to
-make that claim. This workflow concerns public in-vitro measurements, not
-clinical response.
+The demonstration study asks whether **BRAF p.V600E** is associated with response to **PLX-4720**
+in the public GDSC2 cancer cell-line screen, split across three emulated laboratories running as
+Flower SuperNodes. This is a personal project on public in-vitro data: an emulated federation, not
+a patient study.
 
-Each stable `SANGER_MODEL_ID` is allocated by `sha256(SANGER_MODEL_ID) modulo
-3`, without inspecting response, mutation, or lineage. Preparation writes one
-local numeric NPZ matrix per SuperNode plus a manifest containing source
-checksums, counts, the partition rule, and the exact contract. Model IDs remain
-in source-side preparation and are not in the snapshots or coordinator output.
+## How it works
 
-## Workflow and disclosure boundary
+| # | Step | Where it runs | What crosses the wire |
+|---|---|---|---|
+| 1 | Prepare site snapshots, contract and time-limited approval | operator CLI | nothing |
+| 2 | Preflight: each site re-validates the approval against its own allowlist | ServerApp → ClientApps | `StudyPreflightRequest` → `PreflightReply` |
+| 3 | Local association: OLS with HC3 robust standard errors | each ClientApp | `AssociationReply` (β, SE, N) |
+| 4 | Validate replies, inverse-variance meta-analysis, Cochran Q and I² | ServerApp | `AssociationResult` |
+| 5 | Deterministic gate: finish, investigate (I² ≥ 0.50), or stop | operator CLI | `InvestigationDecision` |
+| 6 | Investigator: one LLM call on network aggregates only | AgentApp | `AgentEvidence` → `FollowUpProposal` |
+| 7 | Human approval compiles a new contract with a new digest | operator CLI | `AnalysisContract` + `Approval` |
+| 8 | Stratified second run (SKCM / non-SKCM) and report | ServerApp, ClientApps, AgentApp | `Phase2AssociationResult` |
 
-```mermaid
-flowchart LR
-    S["ServerApp<br/>PLX-4720 / BRAF V600E query"] --> C1["SuperNode 1 ClientApp<br/>local GDSC2 cell lines"]
-    S --> C2["SuperNode 2 ClientApp<br/>local GDSC2 cell lines"]
-    S --> C3["SuperNode 3 ClientApp<br/>local GDSC2 cell lines"]
-    C1 -->|"BRAF effect, HC3 SE, N"| A["ServerApp<br/>combine effects and assess disagreement"]
-    C2 -->|"BRAF effect, HC3 SE, N"| A
-    C3 -->|"BRAF effect, HC3 SE, N"| A
-```
+Three boundaries hold throughout:
 
-The ClientApp loads only its configured local NPZ file, verifies the approved
-contract, fits OLS with HC3 robust standard errors, and releases an allowlisted
-site-level summary. The ServerApp validates replies and performs
-inverse-variance fixed-effect meta-analysis. Released analytics contain summary
-effects, uncertainty, analysed counts, participation/status, and heterogeneity
-diagnostics—not raw design matrices or model IDs.
+- **Rows stay on the node.** Only the allowlisted summary leaves a site.
+- **The model sees aggregates only.** Site-level results are stripped before any LLM call.
+- **The model proposes, a human authorises.** A follow-up runs only under a new contract digest and
+  a fresh, expiring approval.
 
-The deterministic post-primary gate has three outcomes:
+Design and trade-offs: [docs/architecture.md](docs/architecture.md).
 
-- insufficient compatible estimates: stop;
-- no heterogeneity warning (`I² < 0.50`): finish, with no second query;
-- warning with adequate support: authorize aggregate-only investigator input.
+## Technical details
 
-Only the third path permits the Flower Endeavor 1.0 (`flower-endeavor`)
-investigator. The current investigator is fixed to the bounded
-`STRATIFY_GDSC_LINEAGE` proposal and sees aggregate network evidence only. Its
-output is never authorization. An operator must approve the exact new contract
-digest before a second run. The calculation uses `non_skcm` and `skcm`, omits
-the constant lineage column within each stratum, and repeats local OLS-HC3 and
-meta-analysis. It is exploratory and uses the same records; it is not
-replication or causal evidence. A separate aggregate-only Endeavor reporter can
-summarize a terminal result without authorizing more analytics.
+- **Hash-bound contracts.** Every analysis is a frozen Pydantic model (`extra="forbid"`, no NaN/Inf),
+  serialised to canonical JSON and identified by its SHA-256. Approvals bind to that digest and
+  expire. Changing the variant, phenotype or template invalidates the approval.
+- **Defence in depth at the site.** A ClientApp re-validates the approval and checks the request
+  against a closed allowlist, minimum sample size and minimum group support before touching data.
+- **Statistics without heavy dependencies.** OLS with HC3 sandwich errors is written in NumPy and
+  matches `statsmodels` 0.14.5 to a relative tolerance of 1e-10, so the app bundle ships without
+  SciPy or statsmodels.
+- **Explicit participation states.** Missing, invalid, duplicate and identity-mismatched replies are
+  recorded, never silently dropped; a result is `COMPLETE`, `PARTIAL` or `INSUFFICIENT`.
+- **Closed-world LLM step.** One streamed call to Flower Endeavor, no tools. Output is parsed into a
+  strict schema with `Literal` actions, checked against the parent result hash, and given one
+  schema-repair retry before a hard failure.
+- **Log-framed transport.** Apps emit one framed, schema-valid result line; the operator collects it
+  from run logs, accepts identical replays and rejects conflicts.
+- **Two self-contained bundles.** A Flower App Bundle holds either an AgentApp or a
+  ServerApp + ClientApp pair, so shared code is staged into both and a test fails on drift.
 
-## Install and validate
+## Requirements
 
-```shell
+- Python 3.11 or 3.12
+- [uv](https://docs.astral.sh/uv/)
+- For live runs: a Flower account with SuperGrid access and three registered SuperNodes
+  ([docs/deployment.md](docs/deployment.md)). Tests and the synthetic reference need neither.
+
+## Setup
+
+```bash
+git clone https://github.com/apzl/cohort-lens.git && cd cohort-lens
 uv sync --extra test
-uv run python scripts/stage_apps.py
+uv run python scripts/stage_apps.py     # copy shared code into both app bundles
 uv run pytest
-uv run flwr build --app apps/cohort-agent
-uv run flwr build --app apps/cohort-analytics
 ```
 
-Inspect the actual FAB filenames before submission:
+## Run
 
-```shell
-uv run cohortlens inspect-fab AGENT.fab \
-  --forbid-text PRIVATE_PATIENT_SENTINEL --forbid-text DUMMY_SECRET_SENTINEL
-uv run cohortlens inspect-fab ANALYTICS.fab \
-  --forbid-text PRIVATE_PATIENT_SENTINEL --forbid-text DUMMY_SECRET_SENTINEL
-```
+```bash
+# Offline: three synthetic sites, same handlers, no network
+uv run cohortlens reference
 
-## Prepare local SuperNode inputs
-
-Download permitted GDSC2 and Cell Model Passports files yourself; keep source
-data outside the repository and FABs. Prepare local snapshots, the contract,
-time-limited approval, and run config:
-
-```shell
+# Public GDSC2: build three site snapshots, the contract, the approval and the run config
 uv run cohortlens prepare-gdsc \
   --responses data/gdsc/source/GDSC2_fitted_dose_response_27Oct23.xlsx \
   --models data/gdsc/source/model_list_latest.csv.gz \
   --mutations data/gdsc/source/mutations_summary_latest.csv.gz \
   --output-dir data/gdsc/prepared --approved-by OPERATOR --valid-hours 24
-```
 
-The command rejects missing inputs, absent/duplicate PLX-4720 responses,
-insufficient local support, and rank-deficient designs. It will not overwrite
-existing snapshots unless `--overwrite` is explicitly given.
-
-Mount `site-1.npz`, `site-2.npz`, and `site-3.npz` separately and read-only on
-the three SuperNodes. Each local node configuration needs its matching
-`site-alias`, `dataset-path`, and `snapshot-alias`; paths never appear in the
-analytics run config.
-
-## Submit and collect the primary run
-
-```shell
+# Primary run on SuperGrid, then collect the framed result from the log
 uv run flwr run apps/cohort-analytics supergrid \
   --federation @ACCOUNT/FEDERATION \
   --run-config data/gdsc/prepared/analytics-run.toml --stream
-
 uv run flwr log RUN_ID supergrid --show > data/gdsc/prepared/primary.log
-uv run cohortlens collect \
-  --log data/gdsc/prepared/primary.log \
+uv run cohortlens collect --log data/gdsc/prepared/primary.log \
   --study-id gdsc2-plx4720-braf-v600e --query-id primary-001 \
-  --contract-hash CONTRACT_HASH \
-  --output data/gdsc/prepared/primary-result.json
+  --contract-hash CONTRACT_HASH --output data/gdsc/prepared/primary-result.json
 ```
 
-The collector accepts one framed schema-valid result bound to the stated study,
-query, and digest. Record the actual run ID and FAB identifiers with the
-manifest; they are not inferred or fabricated.
+The gate, investigator, approval and follow-up commands are in [docs/usage.md](docs/usage.md).
 
-## Conditional lineage follow-up
+## Outputs
 
-Apply the deterministic gate first. It writes `investigation-decision.json` and
-refuses to prepare Endeavor unless the decision is `INVESTIGATE`.
+| Path | Content |
+|---|---|
+| `data/gdsc/prepared/site-{1,2,3}.npz` | Site-local design matrix and outcome, one per SuperNode |
+| `data/gdsc/prepared/manifest.json` | Source checksums, counts, partition rule, assignment digest |
+| `contract.json`, `approval.json`, `analytics-run.toml` | Hash-bound contract, expiring approval, run config |
+| `primary-result.json` | Pooled β, SE, 95% CI, Q, I², per-site status |
+| `investigation-decision.json` | Gate outcome |
+| `followup-proposal.json`, `followup/` | Validated proposal and the approved follow-up contract |
+| `report.html` | Static report for a primary or follow-up result |
 
-```shell
-uv run cohortlens prepare-investigator \
-  --result data/gdsc/prepared/primary-result.json \
-  --output data/gdsc/prepared/agent-investigate.toml
+`data/` and `runs/` are git-ignored; source data never enters the repository or a bundle.
+
+## Project layout
+
+```
+shared/cohortlens_shared/        single source of truth, staged into both apps
+  schemas.py                     contracts, approvals, results, gate, evidence reduction
+  statistics.py                  OLS-HC3, fixed-effect meta-analysis, synthetic generator
+  gdsc.py                        GDSC2 snapshot preparation and partitioning
+apps/cohort-analytics/           Flower FederatedApp bundle
+  cohortlens_analytics/
+    server_app.py                coordinator: preflight, fan-out, validation, meta-analysis
+    client_app.py                site: allowlist checks, local regression
+  cohortlens_shared/             generated copy, do not edit
+apps/cohort-agent/               Flower AgentApp bundle
+  cohortlens_agent/agent_app.py  investigator and reporter modes, strict output validation
+  cohortlens_shared/             generated copy, do not edit
+operator/cohortlens_operator/    `cohortlens` CLI
+  cli.py                         prepare, collect, gate, approve
+  result_frames.py               framed result extraction from run logs
+  agent_frames.py                framed proposal extraction
+  report.py                      static HTML reports
+  fab.py                         bundle content inspection
+scripts/stage_apps.py            copies shared/ into both apps, verifies the digest
+tests/                           59 offline tests against a fake Flower Grid
+docs/                            explainer page, architecture, usage, results, deployment
 ```
 
-If authorized, run the aggregate-only investigator and validate its proposal
-against the primary result. Do not submit an analytics follow-up for a rejected
-proposal, metadata recheck, or stop decision.
+## Tests
 
-```shell
-uv run flwr run apps/cohort-agent supergrid \
-  --federation @ACCOUNT/FEDERATION \
-  --run-config data/gdsc/prepared/agent-investigate.toml --stream
-uv run flwr log AGENT_RUN_ID supergrid --show > data/gdsc/prepared/investigator.log
-uv run cohortlens collect-investigator \
-  --log data/gdsc/prepared/investigator.log \
-  --parent-result data/gdsc/prepared/primary-result.json \
-  --output data/gdsc/prepared/followup-proposal.json
+```bash
+uv run pytest
 ```
 
-An operator explicitly compiles and approves the validated proposal, producing
-a distinct digest and the only permitted follow-up config:
+59 tests, offline, about 3 seconds. They cover contract and approval binding, site refusals,
+partial participation, the gate, proposal validation, bundle packaging, and the numerical
+cross-check against statsmodels.
 
-```shell
-uv run cohortlens prepare-phase2 \
-  --parent-result data/gdsc/prepared/primary-result.json \
-  --proposal data/gdsc/prepared/followup-proposal.json \
-  --output-dir data/gdsc/prepared/followup --approved-by OPERATOR --valid-hours 24
-uv run flwr run apps/cohort-analytics supergrid \
-  --federation @ACCOUNT/FEDERATION \
-  --run-config data/gdsc/prepared/followup/phase2-analytics-run.toml --stream
-```
+## Results
 
-## Verified SuperGrid execution
+| Run | Sites | Pooled β | 95% CI | I² | Gate |
+|---|---|---|---|---|---|
+| GDSC2 primary, SuperGrid | 3 of 3 (N = 291 / 306 / 341) | −2.3148 ln µM | [−2.8232, −1.8063] | 0% | `FINISH_COMPATIBLE` |
+| Synthetic primary, SuperGrid | 3 of 3 (3 × 1,500 rows) | 0.5108 | | 97.1% | `INVESTIGATE` |
+| Synthetic follow-up, two strata | 3 of 3 in each | 0.140 and 0.862 | | 0% in each | finished |
 
-On 2026-09-16, analytics FAB
-`apsal.cohortlens-analytics.0-1-0.418b9833.fab` completed on the three registered
-deployment SuperNodes in `@apsal/cohortlens-deployment`:
+The GDSC2 sites agreed, so the follow-up loop was not triggered there; it has run end to end on
+SuperGrid only with synthetic data. Details: [docs/results.md](docs/results.md).
 
-- analytics run `6039286529145760171`: `COMPLETE`, three of three estimates;
-- snapshot aliases `gdsc2-plx4720-site-1-v1` through
-  `gdsc2-plx4720-site-3-v1`;
-- combined coefficient `-2.3147527938 ln_micromolar`, 95% CI
-  `[-2.8231890054, -1.8063165823]`, and I² `0.0`;
-- deterministic decision `FINISH_COMPATIBLE`, so no investigator or second
-  analytics query was authorized;
-- aggregate-only Endeavor reporter run `16673699275914942267` completed using
-  agent FAB `apsal.cohortlens-agent.0-1-0.10adca82.fab`.
+## Limits
 
-The captured result, decision, and logs are under `runs/phase4-deployment/`.
-An earlier cold-start run was partial because one node's first dependency
-installation exceeded the reply window; the unchanged warm retry above
-completed successfully.
+- An emulated federation: three partitions of one public dataset, not independent laboratories.
+- Public cell-line assays, not patients. Associations here are not clinical findings.
+- No secure aggregation or differential privacy. The coordinator sees site summaries.
+- Validation catches protocol mistakes; it cannot prove a site computed honestly.
+- With three sites, heterogeneity estimates are unstable.
 
-## Scientific and privacy limits
+## License
 
-This estimates associations in public cancer cell-line assays. It does not
-establish a drug effect in people, clinical benefit, causality, or a validated
-biomarker. The three hash partitions are virtual laboratories, not independent
-replications, and heterogeneity estimates from three sites are unstable.
-
-Rows remain local to ClientApps, but this is not secure aggregation,
-differential privacy, or a confidentiality guarantee: the coordinator receives
-site summaries and result frames are disclosed to log readers. Contract hashes,
-approvals, fixed rosters, and reply validation reduce protocol mistakes; they
-do not prove a site used honest records or calculations. Production use needs
-governed access, audit trails, code/image attestation, data-use review, and
-independent replication.
-
-The recorded deployment proves this workflow executed successfully on Flower
-SuperGrid. It does not turn the resulting association into a biological or
-clinical finding.
+Apache-2.0

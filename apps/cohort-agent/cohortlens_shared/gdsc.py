@@ -13,6 +13,7 @@ from .schemas import canonical_json, default_gdsc_contract
 GDSC2_RELEASE = "8.5-27Oct23"
 COMPOUND_ID = 1036
 COMPOUND_NAME = "PLX-4720"
+LINEAGE_ENRICHED_SIMULATION = "lineage-enriched-v1"
 
 
 def _sha256(path: Path) -> str:
@@ -40,6 +41,71 @@ def _partition(model_id: str) -> int:
     return int(hashlib.sha256(model_id.encode("utf-8")).hexdigest(), 16) % 3
 
 
+def _stable_indices(frame) -> list[int]:
+    """Order rows by a response-independent model-identifier digest."""
+    return sorted(
+        frame.index,
+        key=lambda index: hashlib.sha256(
+            str(frame.at[index, "SANGER_MODEL_ID"]).encode("utf-8")
+        ).hexdigest(),
+    )
+
+
+def _assign_counts(frame, indices: list[int], counts: tuple[int, int, int]) -> None:
+    """Assign fixed support counts to sites, rejecting unsupported releases."""
+    if len(indices) < sum(counts):
+        raise ValueError(
+            "lineage-enriched-v1 lacks the predeclared mutation/lineage support"
+        )
+    offset = 0
+    for partition, count in enumerate(counts):
+        frame.loc[indices[offset : offset + count], "partition"] = partition
+        offset += count
+
+
+def _lineage_enriched_partitions(eligible) -> None:
+    """Create a response-blind, deliberately non-IID three-site emulation.
+
+    The quotas guarantee that every simulated site can estimate both the SKCM
+    and non-SKCM follow-up. Remaining rows are allocated by observed lineage:
+    BRAF-associated lineages, other classified lineages, and unclassified
+    models. LN_IC50 is never inspected by this allocation procedure.
+    """
+    eligible["partition"] = -1
+    support_quotas = {
+        # (SKCM, BRAF p.V600E) -> site-1, site-2, site-3 counts
+        (False, False): (7, 7, 7),
+        (False, True): (3, 3, 3),
+        (True, False): (3, 3, 6),
+        (True, True): (18, 17, 4),
+    }
+    for (skcm, mutant), counts in support_quotas.items():
+        selected = eligible.loc[
+            (eligible["skcm"] == skcm) & (eligible["braf_v600e"] == mutant)
+        ]
+        _assign_counts(eligible, _stable_indices(selected), counts)
+
+    unassigned = eligible["partition"] == -1
+    associated = eligible["TCGA_DESC"].isin({"SKCM", "THCA", "COREAD"})
+    unclassified = eligible["TCGA_DESC"].isna() | (
+        eligible["TCGA_DESC"] == "UNCLASSIFIED"
+    )
+    eligible.loc[unassigned & associated, "partition"] = 0
+    eligible.loc[unassigned & ~associated & ~unclassified, "partition"] = 1
+    eligible.loc[unassigned & unclassified, "partition"] = 2
+
+
+def _assignment_digest(eligible) -> str:
+    """Digest the row-to-site assignment without publishing model records."""
+    assignments = "\n".join(
+        f"{model_id}:{int(partition)}"
+        for model_id, partition in sorted(
+            zip(eligible["SANGER_MODEL_ID"], eligible["partition"], strict=True)
+        )
+    )
+    return f"sha256:{hashlib.sha256(assignments.encode('utf-8')).hexdigest()}"
+
+
 def prepare_gdsc_snapshots(
     *,
     responses_path: Path,
@@ -47,6 +113,7 @@ def prepare_gdsc_snapshots(
     mutations_path: Path,
     output_dir: Path,
     overwrite: bool = False,
+    simulation_split: str | None = None,
 ) -> dict[str, object]:
     """Create three row-free local matrices for PLX-4720/BRAF V600E."""
     for path in (responses_path, models_path, mutations_path):
@@ -100,7 +167,12 @@ def prepare_gdsc_snapshots(
         responses["mutation_covered"] & ~responses["other_braf_driver"]
     ].copy()
     eligible["skcm"] = eligible["TCGA_DESC"] == "SKCM"
-    eligible["partition"] = eligible["SANGER_MODEL_ID"].map(_partition)
+    if simulation_split is None:
+        eligible["partition"] = eligible["SANGER_MODEL_ID"].map(_partition)
+    elif simulation_split == LINEAGE_ENRICHED_SIMULATION:
+        _lineage_enriched_partitions(eligible)
+    else:
+        raise ValueError(f"unsupported GDSC simulation split: {simulation_split}")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     paths = [output_dir / f"site-{index}.npz" for index in range(1, 4)]
@@ -134,7 +206,11 @@ def prepare_gdsc_snapshots(
         site_entries.append(
             {
                 "site_alias": f"site-{partition + 1}",
-                "snapshot_alias": f"gdsc2-plx4720-site-{partition + 1}-v1",
+                "snapshot_alias": (
+                    f"gdsc2-plx4720-{simulation_split}-site-{partition + 1}"
+                    if simulation_split
+                    else f"gdsc2-plx4720-site-{partition + 1}-v1"
+                ),
                 "dataset_path": str(path.resolve()),
                 "sha256": _sha256(path),
                 "rows": int(len(design)),
@@ -159,8 +235,15 @@ def prepare_gdsc_snapshots(
         "excluded_without_mutation_coverage": int(
             (~responses["mutation_covered"]).sum()
         ),
-        "partition_rule": "sha256(SANGER_MODEL_ID) modulo 3",
-        "contract": json.loads(canonical_json(default_gdsc_contract())),
+        "partition_rule": (
+            "response-blind lineage buckets with fixed mutation/lineage support quotas"
+            if simulation_split
+            else "sha256(SANGER_MODEL_ID) modulo 3"
+        ),
+        "assignment_sha256": _assignment_digest(eligible),
+        "contract": json.loads(
+            canonical_json(default_gdsc_contract(simulation_split=simulation_split))
+        ),
         "sources": {
             "responses": {"filename": responses_path.name, "sha256": _sha256(responses_path)},
             "models": {"filename": models_path.name, "sha256": _sha256(models_path)},
@@ -168,6 +251,35 @@ def prepare_gdsc_snapshots(
         },
         "sites": site_entries,
     }
+    if simulation_split:
+        manifest["simulation_split"] = {
+            "name": simulation_split,
+            "purpose": (
+                "Exercise the heterogeneity gate and lineage follow-up path with "
+                "a deliberately non-IID emulated federation."
+            ),
+            "allocation_fields": [
+                "TCGA_DESC",
+                "BRAF p.V600E presence",
+                "SANGER_MODEL_ID digest for deterministic support selection",
+            ],
+            "drug_response_used_for_allocation": False,
+            "site_lineage_emphasis": {
+                "site-1": "SKCM/THCA/COREAD",
+                "site-2": "other classified lineages",
+                "site-3": "UNCLASSIFIED or missing lineage",
+            },
+            "support_quotas": {
+                "non_skcm_no_v600e": [7, 7, 7],
+                "non_skcm_v600e": [3, 3, 3],
+                "skcm_no_v600e": [3, 3, 6],
+                "skcm_v600e": [18, 17, 4],
+            },
+            "inferential_warning": (
+                "This artificial site allocation is for workflow validation, not an "
+                "unbiased estimate of real cross-hospital heterogeneity."
+            ),
+        }
     manifest_path = output_dir / "manifest.json"
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"

@@ -1,4 +1,4 @@
-"""Operator commands for the CohortLens synthetic demonstration."""
+"""Operator CLI: prepare data, contracts and approvals; collect and gate results."""
 
 from __future__ import annotations
 
@@ -27,7 +27,10 @@ from cohortlens_shared.schemas import (
     parse_released_result_json,
 )
 from cohortlens_shared.statistics import generate_synthetic_site, phase1_reference
-from cohortlens_shared.gdsc import prepare_gdsc_snapshots
+from cohortlens_shared.gdsc import (
+    LINEAGE_ENRICHED_SIMULATION,
+    prepare_gdsc_snapshots,
+)
 
 from .fab import FabInspectionError, inspect_fab
 from .agent_frames import AgentFrameError, extract_followup_proposal
@@ -157,11 +160,12 @@ def _prepare_gdsc(args: argparse.Namespace) -> None:
             mutations_path=Path(args.mutations),
             output_dir=output_dir,
             overwrite=args.overwrite,
+            simulation_split=args.simulation_split,
         )
     except (OSError, ValueError) as error:
         _fail(str(error))
 
-    contract = default_gdsc_contract()
+    contract = default_gdsc_contract(simulation_split=args.simulation_split)
     now = datetime.now(timezone.utc).replace(microsecond=0)
     approval = Approval(
         approval_id=f"{contract.analysis_id}-approval",
@@ -355,7 +359,9 @@ def build_parser() -> argparse.ArgumentParser:
     reference.set_defaults(handler=_reference)
 
     prepare = commands.add_parser(
-        "prepare-phase1", help="create and explicitly approve the fixed demo contract"
+        "prepare-synthetic",
+        aliases=["prepare-phase1"],
+        help="create and approve the fixed synthetic-data contract (simulation track)",
     )
     prepare.add_argument("--output-dir", required=True)
     prepare.add_argument("--approved-by", required=True)
@@ -381,6 +387,14 @@ def build_parser() -> argparse.ArgumentParser:
     gdsc.add_argument("--approved-by", required=True)
     gdsc.add_argument("--valid-hours", type=int, default=24)
     gdsc.add_argument("--overwrite", action="store_true")
+    gdsc.add_argument(
+        "--simulation-split",
+        choices=[LINEAGE_ENRICHED_SIMULATION],
+        help=(
+            "explicitly emulate non-IID lineage-enriched sites to exercise the "
+            "heterogeneity and second-round workflow"
+        ),
+    )
     gdsc.set_defaults(handler=_prepare_gdsc)
 
     collect = commands.add_parser(
@@ -400,7 +414,10 @@ def build_parser() -> argparse.ArgumentParser:
     reporter.add_argument("--output", required=True)
     reporter.set_defaults(handler=_prepare_reporter)
 
-    investigator = commands.add_parser("prepare-investigator", help="create an aggregate-only investigator AgentApp config")
+    investigator = commands.add_parser(
+        "prepare-investigator",
+        help="apply the deterministic gate; create an aggregate-only investigator config",
+    )
     investigator.add_argument("--result", required=True)
     investigator.add_argument("--output", required=True)
     investigator.set_defaults(handler=_prepare_investigator)
@@ -414,7 +431,11 @@ def build_parser() -> argparse.ArgumentParser:
     collect_investigator.add_argument("--output", required=True)
     collect_investigator.set_defaults(handler=_collect_investigator)
 
-    phase2 = commands.add_parser("prepare-phase2", help="explicitly approve and compile one bounded context stratification")
+    phase2 = commands.add_parser(
+        "prepare-followup",
+        aliases=["prepare-phase2"],
+        help="approve and compile the one permitted stratified follow-up contract",
+    )
     phase2.add_argument("--parent-result", required=True)
     phase2.add_argument("--proposal", required=True)
     phase2.add_argument("--output-dir", required=True)
@@ -422,7 +443,7 @@ def build_parser() -> argparse.ArgumentParser:
     phase2.add_argument("--valid-hours", type=int, default=24)
     phase2.set_defaults(handler=_prepare_phase2)
 
-    report = commands.add_parser("report", help="render a static Phase 1 HTML report")
+    report = commands.add_parser("report", help="render a static HTML report for a primary or follow-up result")
     report.add_argument("--result", required=True)
     report.add_argument("--output", required=True)
     report.add_argument("--run-id", default="not-recorded")

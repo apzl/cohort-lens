@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "cohortlens-agent"
 version = "0.1.0"
-description = "The CohortLens Flower AgentApp"
+description = "Bounded Endeavor agent for aggregate-only GDSC investigation and reporting"
 license = { file = "LICENSE" }
 requires-python = ">=3.11,<4.0"
 dependencies = ["flwr>=1.37.0,<1.38.0", "openai==2.54.0", "pydantic==2.13.5"]
