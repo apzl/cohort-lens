@@ -5,7 +5,7 @@ every site, each site answers it on its own data, and only three numbers per sit
 If the sites disagree, a tool-using LLM investigator plans over the pooled numbers, proposes one
 follow-up from a closed catalog, and a human signs off each round within a fixed query budget.
 
-![Pipeline](docs/pipeline.gif)
+![Investigation loop: federated round, gate, tool-using investigator, human approval, next round](docs/investigation-loop.gif)
 
 Step-by-step explainer with animated diagrams: [apzl.github.io/cohort-lens](https://apzl.github.io/cohort-lens/).
 

@@ -1,4 +1,4 @@
-// Render the hero loop animation in docs/index.html to docs/pipeline.gif.
+// Render the hero loop animation in docs/index.html to docs/investigation-loop.gif.
 // The animation replays docs/sample-run/gdsc-lineage-enriched-v1.ledger.jsonl, which the page embeds
 // inline; regenerate the GIF after changing that ledger or the diagram.
 //
@@ -11,7 +11,7 @@
 //   npx playwright-core install chromium        # skip if ~/.cache/ms-playwright already has chromium
 //   NODE_PATH=/tmp/cohortlens-gif/node_modules node tools/render_pipeline_gif.mjs
 //
-// Options (env): FPS (default 10), OUT (default docs/pipeline.gif), CHROMIUM (browser executable),
+// Options (env): FPS (default 10), OUT (default docs/investigation-loop.gif), CHROMIUM (browser executable),
 //                FRAMES_DIR (also write a few PNG frames there for inspection).
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -29,7 +29,7 @@ const { PNG } = require('pngjs');
 
 const W = 1200, H = 620;
 const FPS = Number(process.env.FPS || 10);
-const OUT = path.resolve(repo, process.env.OUT || 'docs/pipeline.gif');
+const OUT = path.resolve(repo, process.env.OUT || 'docs/investigation-loop.gif');
 const FRAMES_DIR = process.env.FRAMES_DIR;
 
 function findChromium() {
