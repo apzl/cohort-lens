@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CohortLens</title>
-<meta name="description" content="CohortLens: one approved statistical question travels to three sites, only small summaries come back. A personal project on Flower SuperGrid with public GDSC2 cell-line data.">
+<meta name="description" content="CohortLens: one approved statistical question travels to three sites and only small summaries come back. When the sites disagree, a tool-using investigator proposes the next question, a person signs it, and the loop repeats within a fixed budget. A personal project on Flower with public GDSC2 cell-line data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* Layout: dark header band, stone page, white cards; one wide pipeline diagram leads, everything else explains it. */
+/* Layout: dark header band, stone page, white cards; one wide loop diagram leads, the ledger replay is the centrepiece. */
 :root{
   --ink:#14282f; --head:#0f252c; --on-head:#ffffff; --on-head-soft:#c9dadb;
   --accent:#4fc3b0; --accent-deep:#23897a; --accent-soft:#e3f4f1; --on-accent:#0f252c;
   --muted:#566a6f; --faint:#98a6a8; --line:#e0e6e5; --paper:#ffffff; --stone:#f1f4f3;
   --ok:#1c7f71; --link:#2c63b8;
   --sum:#3f6fd1; --sum-soft:#e6edfb;
-  --llm:#b3741a; --llm-soft:#fbf0dc;
+  --llm:#a8670f; --llm-soft:#fbf0dc;
   --human:#7a52c7; --human-soft:#efe9fa;
   --stop:#b8503a; --stop-soft:#fae9e4;
   --radius:12px; --radius-sm:9px;
@@ -49,12 +49,13 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--stone);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body{background:var(--stone);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 :focus-visible{outline:2px solid var(--accent-deep);outline-offset:2px}
 code,.mono{font-family:var(--mono);font-size:.9em}
 code{background:var(--stone);border-radius:5px;padding:1px 5px;overflow-wrap:anywhere}
+.card code{background:var(--stone)}
 .wrap{max-width:1180px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
 header.top{background:var(--head);color:var(--on-head)}
 header.top .wrap{padding-block:22px;display:flex;flex-wrap:wrap;gap:10px 32px;align-items:flex-end;justify-content:space-between}
@@ -62,33 +63,46 @@ header.top .wrap{padding-block:22px;display:flex;flex-wrap:wrap;gap:10px 32px;al
 .brand i{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
 h1{margin:0;font-size:26px;font-weight:600;letter-spacing:-.01em}
 .sub{margin:4px 0 0;color:var(--on-head-soft);max-width:760px;font-size:14.5px}
-.topnav{display:flex;gap:4px;background:rgba(255,255,255,.08);border-radius:999px;padding:3px}
-.topnav a{color:var(--on-head-soft);font-size:13.5px;font-weight:500;padding:5px 14px;border-radius:999px}
+.topnav{display:flex;flex-wrap:wrap;gap:4px;background:rgba(255,255,255,.08);border-radius:999px;padding:3px}
+.topnav a{color:var(--on-head-soft);font-size:13.5px;font-weight:500;padding:5px 13px;border-radius:999px}
 .topnav a:hover{color:#fff;text-decoration:none}
 .topnav a.cta{background:var(--accent);color:var(--on-accent)}
 main{padding:40px 0 72px}
-section{margin-bottom:56px}
+section{margin-bottom:60px}
 .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ok);font-weight:600;margin-bottom:6px}
 h2{font-size:26px;font-weight:600;letter-spacing:-.015em;margin:0 0 6px;line-height:1.2;text-wrap:balance}
 h3{text-wrap:balance}
-.lead{color:var(--muted);margin:0 0 24px;max-width:720px;font-size:16px}
+.lead{color:var(--muted);margin:0 0 24px;max-width:760px;font-size:16px}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;min-width:0}
+.btn{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--stone);color:var(--ink);border-radius:999px;padding:5px 14px;cursor:pointer;min-height:32px}
+.btn:hover{border-color:var(--accent-deep)}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--stone);border-radius:999px;padding:3px;gap:2px}
+.seg button{font:inherit;font-size:13px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:999px;padding:4px 14px;cursor:pointer;min-height:30px}
+.seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
 
 /* hero */
 .hero{padding:8px 0 0}
-.hero h2{font-size:36px;letter-spacing:-.02em;max-width:780px}
-.hero .lead{font-size:17.5px;color:var(--ink);max-width:820px;margin-bottom:14px}
+.hero h2{font-size:36px;letter-spacing:-.02em;max-width:860px}
+.hero .lead{font-size:17.5px;color:var(--ink);max-width:860px;margin-bottom:14px}
 .hero .lead b{color:var(--ok);font-weight:600}
 .facts{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 24px;padding:0;list-style:none}
 .facts li{font-size:12.5px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 11px;color:var(--muted)}
+.facts li.warn{border-color:color-mix(in srgb,var(--llm) 45%,var(--line));color:var(--llm)}
+.bounds3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 22px}
+.bounds3 div{border-left:3px solid var(--c);background:var(--paper);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:8px 12px;font-size:14px}
+.bounds3 b{display:block;font-weight:600}
+.bounds3 span{color:var(--muted);font-size:13px}
 
-/* pipeline diagram */
+/* loop diagram */
 .diagram{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:14px 14px 0;overflow:hidden}
 .dscroll{overflow-x:auto}
-#pipe{display:block;width:100%;min-width:900px;height:auto}
+#pipe{display:block;width:100%;min-width:920px;height:auto}
 #pipe text{font-family:var(--font);fill:var(--ink)}
 #pipe .nt{font-size:15px;font-weight:600;text-anchor:middle}
 #pipe .ns{font-size:12px;fill:var(--muted);text-anchor:middle}
+#pipe .nm{font-family:var(--mono);font-size:11.5px;fill:var(--muted);text-anchor:middle}
 #pipe .node rect,#pipe .node polygon{fill:var(--stone);stroke:var(--line);stroke-width:1.5;transition:fill .25s,stroke .25s}
 #pipe .node.on rect,#pipe .node.on polygon{fill:var(--accent-soft);stroke:var(--accent-deep);stroke-width:2.2}
 #pipe .node.llm.on rect{fill:var(--llm-soft);stroke:var(--llm)}
@@ -98,44 +112,136 @@ h3{text-wrap:balance}
 #pipe .edge.on{stroke:var(--accent-deep);stroke-width:2.2}
 #pipe .ah{fill:var(--faint)}
 #pipe .bound{fill:none;stroke-width:1.6;stroke-dasharray:6 5;transition:stroke-width .2s}
-#pipe .bound.on{stroke-width:2.6}
+#pipe .bound.on{stroke-width:2.8}
 #pipe .b-rows{stroke:var(--stop)} #pipe .bl-rows{fill:var(--stop)}
 #pipe .b-agg{stroke:var(--llm)} #pipe .bl-agg{fill:var(--llm)}
 #pipe .b-auth{stroke:var(--human)} #pipe .bl-auth{fill:var(--human)}
 #pipe .bl{font-size:12.5px;font-weight:600;text-anchor:middle}
-#pipe .el{font-size:11.5px;fill:var(--muted);text-anchor:middle;font-weight:500}
-#pipe .el.fin{fill:var(--ok);font-weight:600} #pipe .el.inv{fill:var(--llm);font-weight:600;text-anchor:start}
+#pipe .el{font-size:11.5px;fill:var(--muted);font-weight:500}
+#pipe .el.hot{fill:var(--llm);font-weight:700}
+#pipe .el.fin.hot{fill:var(--ok)}
+#pipe .prov{font-size:13px;font-weight:600;fill:var(--llm)}
+#pipe .prov2{font-size:12px;fill:var(--muted)}
 #pipe .pk circle{stroke:var(--paper);stroke-width:2}
-#pipe .pk rect{rx:9}
-#pipe .pk text{font-size:11px;font-weight:600;text-anchor:middle;fill:#fff}
+#pipe .pk text{font-size:11px;font-weight:600;text-anchor:middle;fill:#fff;font-family:var(--font)}
 #pipe .pk.req circle,#pipe .pk.req rect{fill:var(--accent-deep)}
 #pipe .pk.sum circle,#pipe .pk.sum rect{fill:var(--sum)}
 #pipe .pk.llm circle,#pipe .pk.llm rect{fill:var(--llm)}
 #pipe .pk.human circle,#pipe .pk.human rect{fill:var(--human)}
 :root[data-theme="dark"] #pipe .pk text{fill:#0c171b}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #pipe .pk text{fill:#0c171b}}
+#pipe .rseg{fill:var(--line);transition:fill .25s}
+#pipe .rseg.done{fill:var(--accent-deep)}
+#pipe .rseg.cur{fill:var(--accent)}
+#pipe .rlab{font-size:11.5px;fill:var(--muted);text-anchor:middle;font-weight:500}
+#pipe .rlab.cur{fill:var(--ink);font-weight:700}
+#pipe .rhead{font-size:13px;font-weight:700}
+#pipe .tick{font-family:var(--mono);font-size:12px;fill:var(--muted)}
+#pipe .tick.new{fill:var(--ink);font-weight:500}
+#pipe .tick.res{text-anchor:end}
+#pipe .tick.bad{fill:var(--stop);font-weight:500}
+#pipe .tick.good{fill:var(--ok)}
+#pipe .tcount{font-family:var(--mono);font-size:11.5px;fill:var(--muted);text-anchor:end}
+#pipe .lb{stroke:var(--paper);stroke-width:1}
+#pipe .lb.k-human{fill:var(--human)} #pipe .lb.k-run{fill:var(--sum)} #pipe .lb.k-gate{fill:var(--accent-deep)}
+#pipe .lb.k-agent{fill:var(--llm)} #pipe .lb.k-meta{fill:var(--faint)}
+#pipe .lb.off{fill:var(--line)}
+#pipe .lb.last{stroke:var(--ink);stroke-width:2}
+#pipe .lline{stroke:var(--line);stroke-width:2}
 .cap{display:flex;gap:14px;align-items:flex-start;padding:14px 8px 12px;border-top:1px solid var(--line);margin-top:8px;min-height:84px}
-.cap .num{flex:none;width:30px;height:30px;border-radius:9px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.cap .num{flex:none;min-width:30px;height:30px;padding:0 6px;border-radius:9px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
 .cap .txt{min-width:0;flex:1}
 .cap b{display:block;font-size:16px;font-weight:600;line-height:1.3}
 .cap span{color:var(--muted);font-size:14.5px}
 .ctl{display:flex;align-items:center;gap:12px;padding:0 8px 14px;flex-wrap:wrap}
-.btn{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--stone);color:var(--ink);border-radius:999px;padding:5px 14px;cursor:pointer}
-.btn:hover{border-color:var(--accent-deep)}
-.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .dots{display:flex;gap:5px;flex-wrap:wrap}
-.dots button{width:26px;height:10px;border-radius:999px;border:0;background:var(--line);cursor:pointer;padding:0}
+.dots button{width:22px;height:10px;border-radius:999px;border:0;background:var(--line);cursor:pointer;padding:0}
 .dots button.on{background:var(--accent-deep)}
+.dots button.r1{margin-left:6px}
 .swipe{display:none;flex-basis:100%;font-size:12.5px;color:var(--muted)}
-@media (max-width:940px){.swipe{display:block}}
+@media (max-width:960px){.swipe{display:block}}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-left:auto;font-size:12.5px;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
 
-/* stage cards */
+/* replay */
+.replay{padding:0;overflow:hidden}
+.rp-head{padding:18px 22px 14px;border-bottom:1px solid var(--line);display:grid;gap:12px}
+.rp-title{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.rp-title h3{margin:0;font-size:18px;font-weight:600}
+.rp-title h3 small{display:block;font-size:13px;color:var(--muted);font-weight:500}
+.prov-banner{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start;background:var(--llm-soft);border:1px solid color-mix(in srgb,var(--llm) 40%,transparent);border-radius:var(--radius-sm);padding:10px 14px;font-size:13.5px}
+.prov-banner svg{width:20px;height:20px;color:var(--llm);margin-top:1px}
+.prov-banner b{color:var(--llm)}
+.prov-banner ul{margin:4px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:4px 16px}
+.prov-banner li{white-space:normal}
+.prov-banner li::before{content:"• ";color:var(--llm)}
+.rp-ctl{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;padding:12px 22px;border-bottom:1px solid var(--line);background:var(--stone)}
+.rp-ctl .grp{display:flex;gap:6px;align-items:center}
+.rp-ctl .btn{background:var(--paper)}
+.rp-ctl .btn.play{min-width:76px}
+.scrub{flex:1 1 260px;display:flex;gap:10px;align-items:center;min-width:0}
+.scrub input{flex:1;min-width:0;accent-color:var(--accent-deep)}
+.scrub output{font-family:var(--mono);font-size:12.5px;color:var(--muted);white-space:nowrap}
+.rp-state{display:flex;flex-wrap:wrap;gap:8px 22px;padding:12px 22px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);align-items:center}
+.rp-state b{color:var(--ink);font-weight:600}
+.pips{display:inline-flex;gap:4px;vertical-align:middle;margin-left:6px}
+.pips i{width:30px;height:8px;border-radius:999px;background:var(--line)}
+.pips i.done{background:var(--accent-deep)} .pips i.cur{background:var(--accent)}
+.chip{display:inline-block;font-family:var(--mono);font-size:12px;border-radius:999px;padding:1px 9px;background:var(--stone);color:var(--muted);white-space:nowrap}
+.chip.fin{background:var(--accent-soft);color:var(--ok)} .chip.inv{background:var(--llm-soft);color:var(--llm)}
+.chip.stp{background:var(--stop-soft);color:var(--stop)} .chip.hum{background:var(--human-soft);color:var(--human)}
+.chip.sum{background:var(--sum-soft);color:var(--sum)}
+.rp-body{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);min-height:560px}
+.rlist{border-right:1px solid var(--line);max-height:620px;overflow-y:auto;overscroll-behavior:contain;padding:6px 0;position:relative}
+.rsep{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:600;padding:10px 16px 4px}
+.rrow{display:grid;grid-template-columns:30px 14px minmax(0,1fr) 16px;gap:8px;align-items:start;width:100%;text-align:left;font:inherit;color:inherit;background:transparent;border:0;border-left:3px solid transparent;padding:6px 14px 6px 11px;cursor:pointer;transition:opacity .2s,background .2s}
+.rrow:hover{background:var(--stone)}
+.rrow.future{opacity:.32}
+.rrow.cur{background:var(--accent-soft);border-left-color:var(--accent-deep);opacity:1}
+.rrow .sq{font-family:var(--mono);font-size:11.5px;color:var(--faint);padding-top:2px;text-align:right}
+.rrow .kd{width:10px;height:10px;border-radius:3px;margin-top:5px;background:var(--faint)}
+.rrow .tx{min-width:0}
+.rrow .ty{display:block;font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--muted)}
+.rrow .sm{display:block;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+.rrow .vf{font-size:12px;padding-top:2px;color:var(--ok)}
+.rrow .vf.bad{color:var(--stop);font-weight:700}
+.k-human .kd,.kd.k-human{background:var(--human)} .k-run .kd,.kd.k-run{background:var(--sum)} .k-gate .kd,.kd.k-gate{background:var(--accent-deep)}
+.k-agent .kd,.kd.k-agent{background:var(--llm)} .k-meta .kd,.kd.k-meta{background:var(--faint)}
+.rdetail{padding:18px 22px 22px;min-width:0}
+.dh{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:12px}
+.dh .ttl{font-family:var(--mono);font-size:15px;font-weight:500}
+.dh .seqn{font-family:var(--mono);font-size:12.5px;color:var(--faint)}
+.dsum{font-size:15px;margin:0 0 12px}
+.kvg{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:5px 14px;font-size:13.5px;margin:0 0 14px}
+.kvg dt{color:var(--muted)}
+.kvg dd{margin:0;overflow-wrap:anywhere}
+.kvg dd .mono{font-size:12.5px}
+.quote{border-left:3px solid var(--llm);background:var(--llm-soft);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:9px 12px;font-size:14px;margin:0 0 12px}
+.quote small{display:block;color:var(--llm);font-weight:600;font-size:12px;margin-bottom:2px}
+.big{font-family:var(--mono);font-size:22px;font-weight:500;display:inline-block;border-radius:10px;padding:4px 12px;margin:0 0 10px}
+.big.fin{background:var(--accent-soft);color:var(--ok)} .big.inv{background:var(--llm-soft);color:var(--llm)} .big.stp{background:var(--stop-soft);color:var(--stop)}
+pre.json{font-family:var(--mono);font-size:12px;line-height:1.5;background:var(--stone);border-radius:var(--radius-sm);padding:10px 12px;margin:0 0 12px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow-y:auto}
+.lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:600;margin:0 0 6px}
+.agg{width:100%;border-collapse:collapse;font-size:13px;margin:0 0 14px;font-variant-numeric:tabular-nums}
+.agg th,.agg td{text-align:left;padding:5px 8px 5px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.agg th{font-weight:600;color:var(--muted);font-size:12px}
+.chainbox{border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;margin:0 0 12px;font-size:12.5px}
+.chainbox .lk{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;align-items:baseline}
+.chainbox .lk span:nth-child(odd){color:var(--muted)}
+.chainbox .lk .mono{overflow-wrap:anywhere}
+.chainbox .vline{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px 14px}
+.okk{color:var(--ok);font-weight:600} .bad{color:var(--stop);font-weight:600}
+details.raw summary{cursor:pointer;font-size:13px;color:var(--link);margin-bottom:6px}
+.tamper{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:12px 22px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);background:var(--stone)}
+.tamper .btn{background:var(--paper)}
+
+/* step cards */
 .stages{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .stage h3{display:flex;align-items:center;gap:10px;margin:0 0 8px;font-size:17px;font-weight:600}
-.stage h3 .n{width:26px;height:26px;border-radius:8px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:13px;font-weight:700;flex:none;border:0;cursor:pointer;font-family:inherit}
+.stage h3 .n{width:28px;height:28px;border-radius:8px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:13px;font-weight:700;flex:none;border:0;cursor:pointer;font-family:inherit}
+.stage.loop h3 .n{background:var(--llm);color:#fff}
+.stage.hum h3 .n{background:var(--human);color:#fff}
 .stage p{margin:0 0 12px}
 .gives{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;background:var(--accent-soft);border-radius:var(--radius-sm);padding:9px 12px;font-size:14px;margin-bottom:10px}
 .gives b{font-weight:600;white-space:nowrap}
@@ -143,7 +249,40 @@ h3{text-wrap:balance}
 .meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted)}
 .meta .mono{overflow-wrap:anywhere}
 
-/* disclosure diagram */
+/* agent section */
+.agent-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:14px;margin-bottom:14px}
+#pao{display:block;width:100%;height:auto;max-width:520px;margin:0 auto}
+#pao text{font-family:var(--font);fill:var(--ink)}
+#pao .t{font-size:17px;font-weight:600;text-anchor:middle}
+#pao .s{font-size:13.5px;fill:var(--muted);text-anchor:middle}
+#pao .m{font-family:var(--mono);font-size:13px;fill:var(--ink);text-anchor:middle}
+#pao .nd{fill:var(--stone);stroke:var(--line);stroke-width:1.5;transition:fill .25s,stroke .25s}
+#pao .nd.on{fill:var(--llm-soft);stroke:var(--llm);stroke-width:2.2}
+#pao .nd.tool.on{fill:var(--accent-soft);stroke:var(--accent-deep)}
+#pao .ring{fill:none;stroke:var(--line);stroke-width:2}
+#pao .ex{fill:none;stroke:var(--faint);stroke-width:1.5;stroke-dasharray:4 4}
+#pao .dot{fill:var(--llm);stroke:var(--paper);stroke-width:2}
+#pao .cnt{font-family:var(--mono);font-size:13px;fill:var(--ink);text-anchor:middle}
+#pao .ah2{fill:var(--faint)}
+.caps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.caps div{background:var(--stone);border-radius:var(--radius-sm);padding:8px 10px;font-size:12.5px;color:var(--muted)}
+.caps b{display:block;font-size:20px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.proto{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 12px}
+.proto div{background:var(--stone);border-radius:var(--radius-sm);padding:10px 12px;font-size:13.5px;min-width:0}
+.proto b{display:block;font-weight:600;margin-bottom:2px}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th,.tbl td{text-align:left;padding:8px 10px 8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.tbl td:first-child{white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tscroll{overflow-x:auto}
+.pre-list{display:flex;flex-wrap:wrap;gap:4px}
+.pre-list code{font-size:11.5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card h3.ch{margin:0 0 4px;font-size:16.5px;font-weight:600}
+.card p.cs{margin:0 0 12px;color:var(--muted);font-size:14px}
+
+/* disclosure */
 .see{display:grid;grid-template-columns:1fr 46px 1fr 46px 1fr 46px 1fr;align-items:stretch}
 .who{border:1.5px solid var(--line);border-radius:var(--radius);padding:14px;background:var(--paper);min-width:0}
 .who h3{margin:0 0 2px;font-size:15.5px;font-weight:600}
@@ -162,25 +301,25 @@ h3{text-wrap:balance}
 @keyframes cross{0%{left:0;opacity:0}12%{opacity:1}88%{opacity:1}100%{left:calc(100% - 8px);opacity:0}}
 @keyframes bounce{0%{left:0;opacity:0}12%{opacity:1}42%{left:calc(50% - 10px);opacity:1}60%{left:calc(50% - 16px);opacity:.6}100%{left:calc(50% - 16px);opacity:0}}
 .walls-key{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
-.walls-key .card{padding:14px 16px;border-left-width:1px}
+.walls-key .card{padding:14px 16px}
 .walls-key h3{margin:0 0 4px;font-size:14.5px;font-weight:600;display:flex;gap:8px;align-items:center}
 .walls-key h3 i{width:18px;border-top:2px dashed var(--c);display:inline-block;flex:none}
 .walls-key p{margin:0;font-size:13.5px;color:var(--muted)}
 
 /* gate */
 .gate{display:grid;grid-template-columns:5fr 6fr;gap:14px;align-items:stretch}
-.gate label{font-size:13px;font-weight:600;display:block;margin-bottom:6px}
-.track{position:relative;margin:26px 0 30px}
+.gate label,.gate .lab{font-size:13px;font-weight:600;display:block;margin-bottom:6px}
+.track{position:relative;margin:26px 0 26px}
 .track input{width:100%;margin:0;accent-color:var(--accent-deep)}
 .track .thr{position:absolute;left:50%;top:-22px;bottom:-22px;border-left:2px dashed var(--llm)}
 .track .thr::after{content:"threshold 0.50";position:absolute;top:-2px;left:6px;font-size:11.5px;color:var(--llm);white-space:nowrap;font-weight:600}
 .track .ends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);margin-top:4px}
+.track.dim{opacity:.4}
 .i2{font-size:40px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
 .i2 small{font-size:14px;color:var(--muted);font-weight:500;margin-left:6px}
-.seg{display:inline-flex;background:var(--stone);border-radius:999px;padding:3px;gap:2px}
-.seg button{font:inherit;font-size:13px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:999px;padding:4px 14px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
-.presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.gnote{font-size:13px;color:var(--muted);min-height:2.8em;margin:4px 0 14px}
+.gate .row{margin-bottom:14px}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .outs{display:grid;gap:10px;align-content:center}
 .out{display:grid;grid-template-columns:22px 1fr;gap:12px;align-items:center;border:1.5px solid var(--line);border-radius:var(--radius);padding:12px 14px;opacity:.5;transition:opacity .25s,border-color .25s,background .25s,transform .25s}
 .out .pip{width:14px;height:14px;border-radius:50%;background:var(--line);justify-self:center}
@@ -194,31 +333,61 @@ h3{text-wrap:balance}
 @keyframes pip{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 6px color-mix(in srgb,currentColor 12%,transparent)}}
 
 /* technical */
-.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.tool:last-child{grid-column:1/-1}
+.hchain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 14px}
+.hchain .hc{display:inline-flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--radius-sm);padding:5px 10px;background:var(--paper);min-width:0}
+.hchain .hc small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.hchain .hc span{font-family:var(--mono);font-size:12.5px}
+.hchain .hc.c{border-color:color-mix(in srgb,var(--human) 50%,var(--line))}
+.hchain .hc.r{border-color:color-mix(in srgb,var(--sum) 50%,var(--line))}
+.hchain .hc.p{border-color:color-mix(in srgb,var(--llm) 50%,var(--line))}
+.hchain .ar{color:var(--faint)}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .tool h3{font-size:15px;font-weight:600;margin:0 0 6px}
 .tool p{margin:0;font-size:13.5px;color:var(--muted)}
 .tool .ic{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);display:grid;place-items:center;margin-bottom:10px;color:var(--ok)}
 .tool .ic svg{width:18px;height:18px}
 
 /* results */
-.results{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rtag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:2px 10px;margin-bottom:8px}
+.rtag.a{background:var(--sum-soft);color:var(--sum)} .rtag.b{background:var(--llm-soft);color:var(--llm)} .rtag.c{background:var(--accent-soft);color:var(--ok)}
 .results h3{margin:0 0 2px;font-size:17px;font-weight:600}
 .results .q{color:var(--muted);margin:0 0 14px;font-size:14px}
 .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .kv div{background:var(--stone);border-radius:var(--radius-sm);padding:8px 10px;font-size:12.5px;color:var(--muted);min-width:0}
 .kv b{display:block;font-size:17px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .tag{display:inline-block;font-family:var(--mono);font-size:12px;border-radius:999px;padding:2px 10px;background:var(--accent-soft);color:var(--ok)}
-.tag.inv{background:var(--llm-soft);color:var(--llm)}
+.tag.inv{background:var(--llm-soft);color:var(--llm)} .tag.stp{background:var(--stop-soft);color:var(--stop)}
 .chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--muted);margin:0 0 12px}
 .chain .ar{color:var(--faint)}
-.ci{margin:4px 0 12px}
-.ci svg{display:block;width:100%;height:auto}
-.ci text{font-family:var(--font);font-size:11px;fill:var(--muted)}
 .foot{font-size:12.5px;color:var(--muted);margin:10px 0 0}
-.note{background:var(--llm-soft);color:var(--ink);border-radius:var(--radius);padding:12px 16px;font-size:14px;margin-top:14px}
+.note{background:var(--llm-soft);color:var(--ink);border-radius:var(--radius);padding:12px 16px;font-size:14px;margin:14px 0}
 .note b{color:var(--llm)}
-.nums{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}
+.vlist{margin:0;padding:0;list-style:none;display:grid;gap:8px;font-size:14px}
+.vlist li{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:baseline}
+.vlist li i{font-style:normal;font-weight:700;text-align:center}
+.vlist li.y i{color:var(--ok)} .vlist li.n i{color:var(--stop)}
+/* forest plot */
+.forest{display:grid;gap:2px;margin:6px 0 8px}
+.frow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:end;padding:8px 0 4px;border-bottom:1px solid var(--line)}
+.frow .ftrack{grid-column:1/-1}
+.frow:last-of-type{border-bottom:0}
+.frow .fl{font-size:13.5px;line-height:1.3}
+.frow .fl small{display:block;color:var(--muted);font-size:12px}
+.frow .fv{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.frow .fv b{color:var(--ink);font-weight:500}
+.ftrack{position:relative;height:26px}
+.ftrack .zero{position:absolute;top:0;bottom:0;border-left:1.5px dashed var(--faint)}
+.ftrack .grid{position:absolute;top:6px;bottom:6px;border-left:1px solid var(--line)}
+.ftrack .ci{position:absolute;top:11px;height:4px;border-radius:4px;background:var(--accent-deep)}
+.ftrack .rng{position:absolute;top:8px;height:10px;border-radius:4px;border:2px solid var(--llm);background:var(--llm-soft)}
+.ftrack .pt{position:absolute;top:5px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--accent-deep);border:2px solid var(--paper)}
+.faxis{display:grid;gap:2px}
+.faxis .ticks{position:relative;height:18px;font-size:11.5px;color:var(--muted);margin:0 8px}
+.faxis .fcap{font-size:12px;color:var(--muted);text-align:center}
+.ftrack{margin:0 8px}
+.faxis .ticks span{position:absolute;transform:translateX(-50%)}
+.nums{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:14px}
 .nums .card{padding:14px 16px}
 .nums b{display:block;font-size:28px;font-weight:600;line-height:1.1;color:var(--ok);font-variant-numeric:tabular-nums}
 .nums span{font-size:13px;color:var(--muted)}
@@ -239,24 +408,30 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-bet
 .stack li{font-size:12.5px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
 
 @media (max-width:1000px){
-  .stages,.gate,.results,.limits{grid-template-columns:1fr}
+  .stages,.gate,.rgrid,.limits,.agent-grid,.two{grid-template-columns:1fr}
   .tools{grid-template-columns:repeat(2,1fr)}
   .nums{grid-template-columns:repeat(3,1fr)}
   .see{grid-template-columns:1fr}
   .wall{flex-direction:row;height:34px}
   .wall::before{top:50%;bottom:auto;left:6px;right:6px;border-left:0;border-top:2px dashed var(--c)}
   .wall .lane{display:none}
-  .walls-key{grid-template-columns:1fr}
+  .walls-key,.bounds3{grid-template-columns:1fr}
   .legend{margin-left:0}
+  .rp-body{grid-template-columns:1fr}
+  .rlist{border-right:0;border-bottom:1px solid var(--line);max-height:300px}
 }
 @media (max-width:560px){
   .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   .hero h2{font-size:28px}
   h2{font-size:22px}
-  .tools{grid-template-columns:1fr}
+  .tools,.proto{grid-template-columns:1fr}
   .nums{grid-template-columns:repeat(2,1fr)}
   .kv{grid-template-columns:1fr 1fr}
   .card{padding:16px}
+  .rp-head,.rp-ctl,.rp-state,.rdetail,.tamper{padding-left:14px;padding-right:14px}
+  .kvg{grid-template-columns:1fr;gap:0 0}
+  .kvg dd{margin-bottom:6px}
+  .caps b{font-size:17px}
 }
 @media (prefers-reduced-motion:reduce){
   .wall .lane i,.out.on .pip{animation:none!important}
@@ -264,15 +439,15 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-bet
   *{transition:none!important}
 }
 
-/* capture mode: only the pipeline diagram, fixed 1200x620, light palette, no transitions */
+/* capture mode: only the loop diagram, fixed 1200x620, light palette, no transitions */
 body.capture{background:#fff;width:1200px;height:620px;overflow:hidden}
 body.capture>*:not(#capture-root){display:none!important}
 body.capture #capture-root{width:1200px;height:620px;background:#fff}
 body.capture .diagram{border:0;border-radius:0;padding:0;background:#fff}
 body.capture #pipe{width:1200px;height:540px;min-width:0}
-body.capture .cap{margin:0;padding:14px 24px;height:80px;min-height:0;align-items:center}
+body.capture .cap{margin:0;padding:12px 24px;height:80px;min-height:0;align-items:center}
 body.capture .cap b{font-size:18px} body.capture .cap span{font-size:15.5px}
-body.capture .cap .num{width:36px;height:36px;font-size:16px}
+body.capture .cap .num{height:36px;min-width:52px;font-size:14px}
 body.capture .ctl{display:none}
 body.capture *{transition:none!important;animation:none!important}
 </style>
@@ -282,12 +457,14 @@ body.capture *{transition:none!important;animation:none!important}
 <header class="top">
   <div class="wrap">
     <div>
-      <div class="brand"><i></i> Personal project · federated analytics</div>
+      <div class="brand"><i></i> Personal project · federated analytics with a supervised agent loop</div>
       <h1>CohortLens</h1>
-      <p class="sub">One approved statistical question, three sites, small summaries only.</p>
+      <p class="sub">The question travels, the records stay. When the sites disagree, a tool-using investigator proposes the next question and a person signs it.</p>
     </div>
     <nav class="topnav" aria-label="Page">
-      <a href="#steps">Steps</a>
+      <a href="#loop">Loop</a>
+      <a href="#replay">Replay</a>
+      <a href="#agent">Agent</a>
       <a href="#gate">Gate</a>
       <a href="#results">Results</a>
       <a class="cta" href="https://github.com/apzl/cohort-lens">GitHub</a>
@@ -298,73 +475,105 @@ body.capture *{transition:none!important;animation:none!important}
 <main>
 <div class="wrap">
 
-<section class="hero" id="pipeline">
+<section class="hero" id="loop">
   <div class="eyebrow">How it works</div>
-  <h2>The question travels. The records stay where they are.</h2>
-  <p class="lead">Three labs hold data they cannot pool. CohortLens sends each of them the same pre-approved statistical question, lets each one answer it on its own rows, and brings back <b>an effect, its standard error and a count</b>. A coordinator combines the three answers and checks whether the sites agree.</p>
+  <h2>The question travels, the records stay. When the sites disagree, an investigator plans the next question and a person signs it.</h2>
+  <p class="lead">Three labs hold data they cannot pool. CohortLens sends each of them the same approved statistical question and brings back only <b>an effect, its standard error and a count</b>. If the pooled answer shows the sites disagree, an LLM investigator uses a handful of deterministic tools on the pooled numbers and proposes one follow-up from a fixed menu. Nothing runs until a person approves a new contract, and the loop stops when the query budget is spent.</p>
   <ul class="facts">
     <li>Personal project</li>
     <li>Emulated three-site federation</li>
     <li>Public GDSC2 cancer cell-line data, not patients</li>
-    <li>Flower 1.37 SuperGrid, three SuperNodes</li>
+    <li>Flower 1.37</li>
+    <li class="warn">v0.2.0 tool loop verified offline only</li>
   </ul>
+  <div class="bounds3">
+    <div style="--c:var(--stop)"><b>Rows never leave the node</b><span>Only an allowlisted summary leaves a site.</span></div>
+    <div style="--c:var(--llm)"><b>The model sees aggregates only</b><span>Site-level results are stripped before any model call.</span></div>
+    <div style="--c:var(--human)"><b>The model proposes, a human authorises</b><span>Each follow-up needs a new contract digest and a fresh approval.</span></div>
+  </div>
 
   <div class="diagram" id="diagram">
     <div class="dscroll">
-    <svg id="pipe" viewBox="0 0 1200 540" role="img" aria-label="Animated pipeline: the operator approves a contract, the ServerApp fans it out to three SuperNodes, each returns only beta, standard error and N, the ServerApp pools them, a deterministic gate either finishes with a report or sends aggregates to a bounded LLM call, a human approves a new contract, and a stratified second run produces a follow-up report.">
+    <svg id="pipe" viewBox="0 0 1200 540" role="img" aria-labelledby="pipe-t">
+      <title id="pipe-t">Animated loop, replaying the recorded offline sample run. An approved contract goes from the operator to the ServerApp, which fans it out to three SuperNodes; each returns only beta, standard error and N; a meta-analysis pools them; a deterministic gate either finishes or opens an investigation; the investigator agent calls tools over network aggregates and proposes one follow-up; a human approves a new contract and the next round starts. Round 0 primary, I squared 0.618, investigate; round 1 leave-one-site-out; round 2 lineage stratification; then the budget is exhausted and the study finishes. Every step is appended to a hash-chained ledger.</title>
       <defs>
         <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0.8 L9,5 L0,9.2 z"/></marker>
       </defs>
 
+      <!-- provenance -->
+      <text class="prov" x="20" y="24">Replay of the recorded offline sample run (real GDSC2 data)</text>
+      <text class="prov2" x="20" y="42">local in-process backend · scripted policy stands in for the LLM · non-interactive approval</text>
+
+      <!-- round meter -->
+      <text class="rhead" id="rhead" x="820" y="24">Round 0 · 2 follow-ups left</text>
+      <rect class="rseg" id="rs0" x="820" y="34" width="112" height="12" rx="6"/>
+      <rect class="rseg" id="rs1" x="944" y="34" width="112" height="12" rx="6"/>
+      <rect class="rseg" id="rs2" x="1068" y="34" width="112" height="12" rx="6"/>
+      <text class="rlab" id="rl0" x="876" y="64">primary</text>
+      <text class="rlab" id="rl1" x="1000" y="64">follow-up 1</text>
+      <text class="rlab" id="rl2" x="1124" y="64">follow-up 2</text>
+
       <!-- boundaries -->
-      <rect class="bound b-rows" id="b-rows" x="442" y="6" width="216" height="312" rx="16"/>
-      <text class="bl bl-rows" x="550" y="27">Rows never leave the node</text>
-      <rect class="bound b-agg" id="b-agg" x="902" y="376" width="196" height="120" rx="16"/>
-      <text class="bl bl-agg" x="1000" y="517">LLM sees network aggregates only</text>
-      <line class="bound b-auth" id="b-auth" x1="825" y1="374" x2="825" y2="498"/>
-      <text class="bl bl-auth" x="825" y="364">LLM proposes · human authorizes</text>
+      <rect class="bound b-rows" id="b-rows" x="262" y="60" width="214" height="256" rx="16"/>
+      <text class="bl bl-rows" x="369" y="78">Rows never leave the node</text>
+      <rect class="bound b-agg" id="b-agg" x="548" y="316" width="634" height="190" rx="16"/>
+      <text class="bl bl-agg" x="865" y="499">The model sees network aggregates only</text>
+      <line class="bound b-auth" id="b-auth" x1="470" y1="352" x2="470" y2="470"/>
+      <text class="bl bl-auth" x="470" y="332">model proposes</text>
+      <text class="bl bl-auth" x="470" y="347">human authorises</text>
 
       <!-- edges -->
-      <path class="edge" id="e1" d="M150,170 H214" marker-end="url(#ah)"/>
-      <path class="edge" id="e2a" d="M370,160 C415,160 405,72 454,72" marker-end="url(#ah)"/>
-      <path class="edge" id="e2b" d="M370,170 H454" marker-end="url(#ah)"/>
-      <path class="edge" id="e2c" d="M370,180 C415,180 405,268 454,268" marker-end="url(#ah)"/>
-      <path class="edge" id="e3a" d="M640,72 C715,72 695,160 764,160" marker-end="url(#ah)"/>
-      <path class="edge" id="e3b" d="M640,170 H764" marker-end="url(#ah)"/>
-      <path class="edge" id="e3c" d="M640,268 C715,268 695,180 764,180" marker-end="url(#ah)"/>
-      <path class="edge" id="e4" d="M920,170 H950" marker-end="url(#ah)"/>
-      <path class="edge" id="e5" d="M1044,170 H1086" marker-end="url(#ah)"/>
-      <path class="edge" id="e6" d="M1000,214 V390" marker-end="url(#ah)"/>
-      <path class="edge" id="e7" d="M920,436 H736" marker-end="url(#ah)"/>
-      <path class="edge" id="e8" d="M560,436 H315 Q295,436 295,416 V221" marker-end="url(#ah)"/>
-      <path class="edge" id="e9" d="M845,125 C845,44 1139,44 1139,124" marker-end="url(#ah)"/>
+      <path class="edge" id="e-op" d="M115,358 V210" marker-end="url(#ah)"/>
+      <path class="edge" id="e-s1" d="M190,150 C232,150 232,121 274,121" marker-end="url(#ah)"/>
+      <path class="edge" id="e-s2" d="M190,162 C232,162 232,198 274,198" marker-end="url(#ah)"/>
+      <path class="edge" id="e-s3" d="M190,174 C232,174 232,275 274,275" marker-end="url(#ah)"/>
+      <path class="edge" id="e-r1" d="M460,121 C500,121 498,150 534,150" marker-end="url(#ah)"/>
+      <path class="edge" id="e-r2" d="M460,198 C500,198 498,162 534,162" marker-end="url(#ah)"/>
+      <path class="edge" id="e-r3" d="M460,275 C505,275 498,174 534,174" marker-end="url(#ah)"/>
+      <path class="edge" id="e-mg" d="M710,162 H744" marker-end="url(#ah)"/>
+      <path class="edge" id="e-gr" d="M852,162 H1030" marker-end="url(#ah)"/>
+      <path class="edge" id="e-ga" d="M800,214 V322" marker-end="url(#ah)"/>
+      <path class="edge" id="e-ap" d="M558,404 H236" marker-end="url(#ah)"/>
 
-      <!-- edge labels -->
-      <text class="el" x="730" y="304">only β, SE, N cross</text>
-      <text class="el fin" x="1066" y="156">FINISH</text>
-      <text class="el inv" x="1012" y="296">INVESTIGATE</text>
-      <text class="el" x="1012" y="312" style="text-anchor:start">if I² ≥ 0.50</text>
-      <text class="el" x="430" y="458">new contract hash + approval</text>
-      <text class="el" x="992" y="50">follow-up result</text>
+      <!-- static edge labels -->
+      <text class="el" x="124" y="286">contract +</text>
+      <text class="el" x="124" y="300">approval,</text>
+      <text class="el" x="124" y="314">every round</text>
+      <text class="el" id="lab-inv" x="810" y="262">INVESTIGATE</text>
+      <text class="el" x="810" y="277">aggregates only</text>
+      <text class="el fin" id="lab-fin" x="941" y="150" style="text-anchor:middle">FINISH · BUDGET_EXHAUSTED</text>
+      <text class="el" x="352" y="426" style="text-anchor:middle">FollowUpProposal</text>
 
       <!-- nodes -->
-      <g class="node" id="n-op"><rect x="20" y="128" width="130" height="84" rx="14"/><text class="nt" x="85" y="165">Operator</text><text class="ns" x="85" y="185">contract + approval</text></g>
-      <g class="node" id="n-server"><rect x="220" y="125" width="150" height="90" rx="14"/><text class="nt" x="295" y="165">ServerApp</text><text class="ns" x="295" y="185">validate · fan out</text></g>
-      <g class="node" id="n-s1"><rect x="460" y="40" width="180" height="64" rx="12"/><g class="rows"><line x1="476" y1="62" x2="492" y2="62"/><line x1="476" y1="72" x2="492" y2="72"/><line x1="476" y1="82" x2="492" y2="82"/></g><text class="nt" x="560" y="68">SuperNode 1</text><text class="ns" x="560" y="87" id="s1s">local rows</text></g>
-      <g class="node" id="n-s2"><rect x="460" y="138" width="180" height="64" rx="12"/><g class="rows"><line x1="476" y1="160" x2="492" y2="160"/><line x1="476" y1="170" x2="492" y2="170"/><line x1="476" y1="180" x2="492" y2="180"/></g><text class="nt" x="560" y="166">SuperNode 2</text><text class="ns" x="560" y="185" id="s2s">local rows</text></g>
-      <g class="node" id="n-s3"><rect x="460" y="236" width="180" height="64" rx="12"/><g class="rows"><line x1="476" y1="258" x2="492" y2="258"/><line x1="476" y1="268" x2="492" y2="268"/><line x1="476" y1="278" x2="492" y2="278"/></g><text class="nt" x="560" y="264">SuperNode 3</text><text class="ns" x="560" y="283" id="s3s">local rows</text></g>
-      <g class="node" id="n-meta"><rect x="770" y="125" width="150" height="90" rx="14"/><text class="nt" x="845" y="165">Meta-analysis</text><text class="ns" x="845" y="185">β · 95% CI · I²</text></g>
-      <g class="node" id="n-gate"><polygon points="1000,126 1044,170 1000,214 956,170"/><text class="nt" x="1000" y="168" style="font-size:14px">Gate</text><text class="ns" x="1000" y="184" id="gates" style="font-size:11px">plain code</text></g>
-      <g class="node" id="n-report"><rect x="1092" y="128" width="94" height="84" rx="14"/><text class="nt" x="1139" y="165">Report</text><text class="ns" x="1139" y="185" id="reps">aggregates</text></g>
-      <g class="node llm" id="n-llm"><rect x="920" y="396" width="160" height="80" rx="14"/><text class="nt" x="1000" y="432">LLM investigator</text><text class="ns" x="1000" y="452">one bounded call</text></g>
-      <g class="node human" id="n-human"><rect x="560" y="396" width="170" height="80" rx="14"/><text class="nt" x="645" y="432">Human approval</text><text class="ns" x="645" y="452">signs the new contract</text></g>
+      <g class="node" id="n-server"><rect x="40" y="120" width="150" height="84" rx="14"/><text class="nt" x="115" y="157">ServerApp</text><text class="ns" x="115" y="177">preflight · fan out</text></g>
+      <g class="node" id="n-s1"><rect x="278" y="92" width="182" height="58" rx="12"/><g class="rows"><line x1="292" y1="111" x2="306" y2="111"/><line x1="292" y1="121" x2="306" y2="121"/><line x1="292" y1="131" x2="306" y2="131"/></g><text class="nt" x="378" y="117">SuperNode 1</text><text class="ns sn" x="378" y="136">local rows</text></g>
+      <g class="node" id="n-s2"><rect x="278" y="169" width="182" height="58" rx="12"/><g class="rows"><line x1="292" y1="188" x2="306" y2="188"/><line x1="292" y1="198" x2="306" y2="198"/><line x1="292" y1="208" x2="306" y2="208"/></g><text class="nt" x="378" y="194">SuperNode 2</text><text class="ns sn" x="378" y="213">local rows</text></g>
+      <g class="node" id="n-s3"><rect x="278" y="246" width="182" height="58" rx="12"/><g class="rows"><line x1="292" y1="265" x2="306" y2="265"/><line x1="292" y1="275" x2="306" y2="275"/><line x1="292" y1="285" x2="306" y2="285"/></g><text class="nt" x="378" y="271">SuperNode 3</text><text class="ns sn" x="378" y="290">local rows</text></g>
+      <g class="node" id="n-meta"><rect x="538" y="114" width="172" height="96" rx="14"/><text class="nt" x="624" y="146">Meta-analysis</text><text class="ns" id="m1" x="624" y="168">β · 95% CI · Q · I²</text><text class="ns" id="m2" x="624" y="186"></text></g>
+      <g class="node" id="n-gate"><polygon points="800,112 850,162 800,212 750,162"/><text class="nt" x="800" y="159" style="font-size:14px">Gate</text><text class="ns" id="gs" x="800" y="176" style="font-size:11px">plain code</text></g>
+      <g class="node" id="n-report"><rect x="1036" y="120" width="144" height="84" rx="14"/><text class="nt" x="1108" y="157">Report</text><text class="ns" id="reps" x="1108" y="177">from the ledger</text></g>
+      <g class="node human" id="n-op"><rect x="40" y="360" width="192" height="96" rx="14"/><text class="nt" x="136" y="392">Human approval</text><text class="ns" x="136" y="411">operator signs the digest</text><text class="nm" id="opd" x="136" y="432">contract 5214ffd1…</text></g>
+      <g class="node llm" id="n-agent">
+        <rect x="560" y="328" width="610" height="152" rx="14"/>
+        <text class="nt" x="580" y="353" style="text-anchor:start">Investigator agent</text>
+        <text class="ns" x="580" y="371" style="text-anchor:start">AgentApp · no handle to the Grid</text>
+        <text class="tcount" id="tc" x="1152" y="353">idle</text>
+        <text class="tcount" id="tc2" x="1152" y="371"></text>
+        <g id="ticks"></g>
+      </g>
+
+      <!-- ledger strip -->
+      <text class="rhead" x="20" y="530" style="font-size:12.5px">Ledger</text>
+      <text class="tcount" id="lcount" x="128" y="530">0 / 44</text>
+      <line class="lline" x1="140" y1="525" x2="1176" y2="525"/>
+      <g id="lblocks"></g>
 
       <g id="packets"></g>
     </svg>
     </div>
     <div class="cap" aria-live="off">
-      <div class="num" id="cap-n">1</div>
-      <div class="txt"><b id="cap-t">Contract and approval</b><span id="cap-d"></span></div>
+      <div class="num" id="cap-n">R0</div>
+      <div class="txt"><b id="cap-t">Contract approved</b><span id="cap-d"></span></div>
     </div>
     <div class="ctl">
       <span class="swipe">Swipe the diagram sideways to see all of it.</span>
@@ -373,9 +582,61 @@ body.capture *{transition:none!important;animation:none!important}
       <div class="legend">
         <span><i style="background:var(--accent-deep)"></i>request</span>
         <span><i style="background:var(--sum)"></i>summary</span>
-        <span><i style="background:var(--llm)"></i>LLM</span>
+        <span><i style="background:var(--llm)"></i>agent</span>
         <span><i style="background:var(--human)"></i>human</span>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="replay">
+  <div class="eyebrow">Run replay</div>
+  <h2>Step through a real run ledger, entry by entry</h2>
+  <p class="lead">Every gate decision, tool call, proposal, approval and released aggregate is appended to a JSONL ledger in which each entry hashes the one before it. These are the two sample ledgers committed in <code>docs/sample-run/</code>, embedded unchanged. Your browser recomputes every SHA-256 as you go.</p>
+
+  <div class="card replay" id="rp">
+    <div class="rp-head">
+      <div class="rp-title">
+        <h3 id="rp-h">Lineage-enriched split<small id="rp-hs">44 entries · 3 rounds · ended BUDGET_EXHAUSTED</small></h3>
+        <div class="seg" role="group" aria-label="Choose a ledger">
+          <button type="button" data-run="lineage" aria-pressed="true">Lineage-enriched · 3 rounds</button>
+          <button type="button" data-run="hash" aria-pressed="false">Hash split · sites agree</button>
+        </div>
+      </div>
+      <div class="prov-banner" role="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+        <div><b>How this run was produced: an offline demo, not a live deployment.</b>
+          <ul>
+            <li><b>Local in-process backend</b>: the real ServerApp and ClientApp handlers over an in-memory grid, not SuperGrid</li>
+            <li><b>A deterministic scripted policy stands in for the model</b> (<code>cohortlens-scripted-policy-v1</code>). Nothing here is LLM output</li>
+            <li><b>Non-interactive approval</b> (<code>SCRIPTED_NON_INTERACTIVE</code>): no human was asked</li>
+            <li>Data: real public GDSC2 release 8.5</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="rp-ctl">
+      <div class="grp">
+        <button class="btn play" id="rp-play" type="button" aria-pressed="false">Play</button>
+        <button class="btn" id="rp-prev" type="button" aria-label="Previous entry">◀ Prev</button>
+        <button class="btn" id="rp-next" type="button" aria-label="Next entry">Next ▶</button>
+      </div>
+      <div class="scrub">
+        <input type="range" id="rp-scrub" min="0" max="43" value="0" step="1" aria-label="Ledger position">
+        <output id="rp-pos" for="rp-scrub">1 / 44</output>
+      </div>
+      <div class="grp">
+        <button class="btn" id="rp-speed" type="button" aria-label="Playback speed">1×</button>
+      </div>
+    </div>
+    <div class="rp-state" id="rp-state" aria-live="polite"></div>
+    <div class="rp-body">
+      <div class="rlist" id="rp-list" role="list" aria-label="Ledger entries"></div>
+      <div class="rdetail" id="rp-detail"></div>
+    </div>
+    <div class="tamper">
+      <button class="btn" id="rp-tamper" type="button" aria-pressed="false">Simulate an edit</button>
+      <span id="rp-tamper-t">Changes I² in entry #3 of this page's copy, then re-hashes. Nothing is written anywhere.</span>
     </div>
   </div>
 </section>
@@ -383,86 +644,158 @@ body.capture *{transition:none!important;animation:none!important}
 <section id="steps">
   <div class="eyebrow">Step by step</div>
   <h2>What each step does</h2>
-  <p class="lead">Ten steps from raw files to a report. Each card says what crosses the wire and where the code lives. Press a number to replay that step in the diagram.</p>
+  <p class="lead">Eight steps, the last of which loops back to the gate. Each card says what crosses the wire and where the code lives. Press a number to replay that step in the diagram.</p>
   <div class="stages">
 
-    <div class="card stage">
-      <h3><button class="n" type="button" data-step="0" aria-label="Show step 1 in the diagram">1</button>Prepare the site data</h3>
-      <p>The operator reads the GDSC2 response workbook, the Cell Model Passports model list and the driver-mutation summary, keeps PLX-4720, and splits cell lines into three sites by <code>sha256(SANGER_MODEL_ID) % 3</code>. The split never looks at drug response. Each site gets a numeric matrix with no model IDs in it.</p>
-      <div class="gives none"><b>Crosses the wire</b> nothing, this runs on the data side</div>
-      <div class="meta"><span class="mono">cohortlens_shared/gdsc.py</span><span class="mono">prepare_gdsc_snapshots</span></div>
+    <div class="card stage hum">
+      <h3><button class="n" type="button" data-step="0" aria-label="Show step 1 in the diagram">1</button>A human approves the primary contract</h3>
+      <p>The question is a frozen contract: variant, outcome, covariates, estimator, site roster, release policy, round index and query budget (default: primary + 2 follow-ups). Its canonical JSON is hashed with SHA-256 and a time-limited approval is bound to that digest.</p>
+      <div class="gives none"><b>Crosses the wire</b> nothing yet; the operator CLI prepares site snapshots, contract and approval</div>
+      <div class="meta"><span class="mono">schemas.py · AnalysisContract · Approval · contract_digest</span></div>
     </div>
 
     <div class="card stage">
-      <h3><button class="n" type="button" data-step="0" aria-label="Show step 2 in the diagram">2</button>Write the contract, approve its hash</h3>
-      <p>The question is a frozen contract: compound, variant, outcome, covariates, estimator, release policy. Its canonical JSON is hashed with SHA-256, and a time-limited approval is bound to that hash. Change one field and the approval no longer matches.</p>
-      <div class="gives"><b>Produces</b> <code>AnalysisContract</code> <code>Approval</code></div>
-      <div class="meta"><span class="mono">cohortlens_shared/schemas.py</span><span class="mono">default_gdsc_contract · contract_digest</span></div>
-    </div>
-
-    <div class="card stage">
-      <h3><button class="n" type="button" data-step="1" aria-label="Show step 3 in the diagram">3</button>Submit the run</h3>
-      <p>The contract and approval go to Flower SuperGrid as a run config. The ServerApp refuses leftover placeholders, checks the approval (hash, study, analysis, expiry) and waits for three SuperNodes with a bounded deadline.</p>
-      <div class="gives"><b>Crosses the wire</b> run-config TOML with the contract and approval inlined, no file paths</div>
-      <div class="meta"><span class="mono">cohortlens_analytics/server_app.py</span></div>
-    </div>
-
-    <div class="card stage">
-      <h3><button class="n" type="button" data-step="1" aria-label="Show step 4 in the diagram">4</button>Preflight at every site</h3>
-      <p>Each node checks the request for itself. It re-validates the approval, compares the analysis against a hard-coded allowlist, and confirms it has enough rows in each group. It answers READY or one of seven refusal codes.</p>
+      <h3><button class="n" type="button" data-step="1" aria-label="Show step 2 in the diagram">2</button>Preflight at every site</h3>
+      <p>Each SuperNode re-validates the approval, checks the request against its own closed allowlist (template, covariates, strata, round), its own budget cap, minimum sample size and group support. It answers READY or a refusal code such as <code>QUERY_BUDGET_EXHAUSTED</code>.</p>
       <div class="gives"><b>Crosses the wire</b> <code>StudyPreflightRequest</code> → <code>PreflightReply</code></div>
-      <div class="meta"><span class="mono">cohortlens_analytics/client_app.py</span><span class="mono">handle_preflight</span></div>
+      <div class="meta"><span class="mono">client_app.py · _compatibility_status · SITE_POLICIES</span></div>
     </div>
 
     <div class="card stage">
-      <h3><button class="n" type="button" data-step="2" aria-label="Show step 5 in the diagram">5</button>Local regression</h3>
-      <p>Only READY nodes get the question. Each one loads its own matrix, fits ordinary least squares, and computes an HC3 robust standard error for the BRAF V600E coefficient. Rows and design matrices never leave the node.</p>
-      <div class="gives"><b>Crosses the wire</b> <code>AssociationRequest</code> → <code>AssociationReply</code> with β, SE, N and the contract hash</div>
-      <div class="meta"><span class="mono">client_app.py · handle_association</span><span class="mono">statistics.py · fit_genotype_ols_hc3</span></div>
+      <h3><button class="n" type="button" data-step="2" aria-label="Show step 3 in the diagram">3</button>Local association</h3>
+      <p>Ready sites fit ordinary least squares on their own rows and compute an HC3 robust standard error for the BRAF V600E coefficient. Payloads are capped at 64 KiB.</p>
+      <div class="gives"><b>Crosses the wire</b> <code>AssociationReply</code>: β, SE, N and the contract hash</div>
+      <div class="meta"><span class="mono">statistics.py · fit_genotype_ols_hc3</span></div>
     </div>
 
     <div class="card stage">
-      <h3><button class="n" type="button" data-step="3" aria-label="Show step 6 in the diagram">6</button>Validate and pool</h3>
-      <p>The ServerApp ties every reply to its node, study, query and contract hash. A missing, invalid or duplicate reply is recorded as such, never silently dropped. With two or more estimates it runs an inverse-variance fixed-effect meta-analysis and reports β, a 95% interval, Cochran Q and I².</p>
-      <div class="gives"><b>Releases</b> <code>AssociationResult</code> as one framed log line</div>
-      <div class="meta"><span class="mono">server_app.py · run_phase1</span><span class="mono">statistics.py · fixed_effect_meta</span></div>
+      <h3><button class="n" type="button" data-step="3" aria-label="Show step 4 in the diagram">4</button>Validate and pool</h3>
+      <p>The ServerApp binds each reply to its node, study, query, contract hash and stratum. Missing, invalid, duplicate and mismatched replies become explicit states. With two or more estimates it runs an inverse-variance fixed-effect meta-analysis.</p>
+      <div class="gives"><b>Releases</b> <code>AssociationResult</code>: β, 95% CI, Cochran Q, I²</div>
+      <div class="meta"><span class="mono">server_app.py · execute_contract · run_phase1</span><span class="mono">statistics.py · fixed_effect_meta</span></div>
     </div>
 
     <div class="card stage">
-      <h3><button class="n" type="button" data-step="4" aria-label="Show step 7 in the diagram">7</button>Collect, then gate</h3>
-      <p>The operator pulls the run log and accepts exactly one schema-valid result frame for the expected study and hash. A plain function then decides what happens next: stop, finish, or investigate. No model is involved in that decision.</p>
+      <h3><button class="n" type="button" data-step="4" aria-label="Show step 5 in the diagram">5</button>A deterministic gate</h3>
+      <p>Plain code, no model. After the primary: fewer than two estimates stops, I² ≥ 0.50 investigates, otherwise finish. After a follow-up it only checks that the round released an aggregate and that budget remains. It never judges whether another query is worth it.</p>
       <div class="gives"><b>Produces</b> <code>InvestigationDecision</code></div>
-      <div class="meta"><span class="mono">cohortlens_operator/result_frames.py</span><span class="mono">schemas.py · investigation_decision_from_result</span></div>
+      <div class="meta"><span class="mono">schemas.py · investigation_decision_from_result · continuation_decision</span></div>
     </div>
 
-    <div class="card stage">
-      <h3><button class="n" type="button" data-step="6" aria-label="Show step 8 in the diagram">8</button>Report, or ask for a proposal</h3>
-      <p>Site-level results are stripped first. If the sites agree, one LLM call writes a short report. If they disagree, one LLM call receives the pooled numbers and must return a proposal in a fixed schema: stratify by melanoma versus other lineages. One repair retry, then a hard failure.</p>
-      <div class="gives"><b>Crosses the wire</b> <code>AgentEvidence</code> → <code>ReporterOutput</code> or <code>FollowUpProposal</code></div>
-      <div class="meta"><span class="mono">cohortlens_agent/agent_app.py</span></div>
+    <div class="card stage loop">
+      <h3><button class="n" type="button" data-step="5" aria-label="Show step 6 in the diagram">6</button>The investigator's tool loop</h3>
+      <p>The AgentApp runs a bounded plan → act → observe loop. Six deterministic tools read the aggregate-only evidence, describe the action catalog and check preconditions; <code>submit_proposal</code> validates the proposal and returns any errors to the model.</p>
+      <div class="gives"><b>Crosses the wire</b> <code>InvestigationEvidence</code> → <code>InvestigatorRecord</code> (<code>FollowUpProposal</code> + full trace)</div>
+      <div class="meta"><span class="mono">investigator.py · InvestigatorLoop</span><span class="mono">tools.py · InvestigationToolbox</span><span class="mono">agent_app.py · run_investigator</span></div>
     </div>
 
-    <div class="card stage">
-      <h3><button class="n" type="button" data-step="7" aria-label="Show step 9 in the diagram">9</button>A human approves the follow-up</h3>
-      <p>The proposal authorizes nothing. The operator compiles the only permitted follow-up contract, tied to the hash of the first result, and signs a fresh approval for its new hash. Without that, no second run exists.</p>
+    <div class="card stage hum">
+      <h3><button class="n" type="button" data-step="6" aria-label="Show step 7 in the diagram">7</button>A human signs a parent-bound contract</h3>
+      <p>The operator sees the proposal, its rationale and the exact digest of the one contract the catalog compiles from it. That contract binds the hash of the parent result and of the proposal. Compilation re-checks preconditions, so a person cannot approve what the catalog forbids. The agent cannot start a run: the operator is the only bridge to the Grid.</p>
       <div class="gives"><b>Produces</b> a new <code>AnalysisContract</code> + <code>Approval</code></div>
-      <div class="meta"><span class="mono">schemas.py · compile_stratified_followup</span></div>
+      <div class="meta"><span class="mono">catalog.py · compile_followup</span><span class="mono">approvals.py</span></div>
     </div>
 
     <div class="card stage">
-      <h3><button class="n" type="button" data-step="8" aria-label="Show step 10 in the diagram">10</button>Stratified second run and report</h3>
-      <p>The same preflight, regression and pooling run once per stratum: <code>skcm</code> and <code>non_skcm</code>. Each node selects its rows locally and refits. The result is marked exploratory, and a final LLM call summarizes it from aggregates only.</p>
-      <div class="gives"><b>Releases</b> <code>Phase2AssociationResult</code> → <code>ReporterOutput</code></div>
-      <div class="meta"><span class="mono">server_app.py · run_phase2</span><span class="mono">statistics.py · context_stratum</span></div>
+      <h3><button class="n" type="button" data-step="7" aria-label="Show step 8 in the diagram">8</button>Follow-up round, then back to step 5</h3>
+      <p>The ServerApp checks the contract against the proposal (proposal hash, parent hash, round, template, budget) and dispatches. Leave-one-site-out re-runs the primary model and releases the pooled result with each site omitted; stratification runs steps 2–4 per stratum.</p>
+      <div class="gives"><b>Releases</b> <code>LeaveOneSiteOutResult</code> or <code>StratifiedAssociationResult</code></div>
+      <div class="meta"><span class="mono">catalog.py · verify_followup_binding</span><span class="mono">server_app.py · run_leave_one_site_out · run_stratified</span></div>
     </div>
 
+  </div>
+</section>
+
+<section id="agent">
+  <div class="eyebrow">Inside the agent</div>
+  <h2>A bounded tool loop over pooled numbers</h2>
+  <p class="lead">The investigator never sees rows or site-level estimates, and cannot run an analysis. It can look at aggregates, read a fixed menu of follow-ups with their disclosure costs, check what is currently allowed, and submit one proposal. The prompt describes the role, constraints and tools; it never contains the answer.</p>
+
+  <div class="agent-grid">
+    <div class="card">
+      <h3 class="ch">Plan → act → observe</h3>
+      <p class="cs">One model request per step. The loop, not the model, executes each tool and enforces every cap.</p>
+      <svg id="pao" viewBox="0 0 520 340" role="img" aria-label="Loop diagram: the model plans and emits one tool call; the loop runs the tool locally on aggregate-only evidence; the output returns to the model as the next message. An accepted submit_proposal ends the loop with a proposal; reaching a cap ends it with a FAILED record and no query.">
+        <defs><marker id="ah2" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah2" d="M0,0.8 L9,5 L0,9.2 z"/></marker></defs>
+        <path class="ring" id="pao-ring" d="M260,52 C380,52 430,120 410,170 C390,225 320,262 260,262 C200,262 130,225 110,170 C90,120 140,52 260,52 Z"/>
+        <circle class="dot" id="pao-dot" r="8" cx="260" cy="52"/>
+        <g><rect class="nd" id="pn-plan" x="180" y="22" width="160" height="62" rx="14"/><text class="t" x="260" y="49">Plan</text><text class="s" x="260" y="70">model picks a tool</text></g>
+        <g><rect class="nd tool" id="pn-act" x="345" y="140" width="165" height="62" rx="14"/><text class="t" x="427" y="167">Act</text><text class="s" x="427" y="188">loop runs it locally</text></g>
+        <g><rect class="nd" id="pn-obs" x="10" y="140" width="165" height="62" rx="14"/><text class="t" x="92" y="167">Observe</text><text class="s" x="92" y="188">result goes back</text></g>
+        <text class="m" id="pao-call" x="260" y="128">get_current_evidence()</text>
+        <text class="cnt" id="pao-cnt" x="260" y="226">step 1/12 · calls 1/16</text>
+        <path class="ex" d="M260,262 V292" marker-end="url(#ah2)"/>
+        <text class="s" x="260" y="312" style="fill:var(--ink)">exit: accepted proposal → PROPOSED</text>
+        <text class="s" x="260" y="330" style="fill:var(--ink)">any cap hit → FAILED, no query follows</text>
+      </svg>
+      <div class="caps">
+        <div><b>12</b>max steps</div>
+        <div><b>16</b>max tool calls</div>
+        <div><b>3</b>max invalid turns</div>
+      </div>
+      <p class="foot">Also <code>max_output_tokens</code> 2000 and an OpenAI client built with <code>max_retries=0</code>. All caps are overridable in run config. The call sequence shown is the scripted policy's round-2 trace from the sample ledger.</p>
+    </div>
+    <div class="card">
+      <h3 class="ch">Two tool protocols</h3>
+      <p class="cs">The same tools, two ways to call them.</p>
+      <div class="proto">
+        <div><b>native</b>Responses API <code>tools</code>; the model emits <code>function_call</code> items and gets <code>function_call_output</code> back.</div>
+        <div><b>json (default)</b>Tools are listed in the instructions; the model replies with exactly one JSON object per turn.</div>
+      </div>
+      <div class="lbl">One JSON turn, from the sample ledger (step 5, round 1)</div>
+      <pre class="json">{"tool": "check_action", "arguments": {"action": "LEAVE_ONE_SITE_OUT"}}</pre>
+      <p style="margin:0 0 10px;font-size:14px">Anything else is an invalid turn: the loop answers with <code>INVALID_TURN …</code> feedback and counts it against the cap of 3. A native request rejected with HTTP 400 before any native turn has succeeded restarts the conversation in <code>json</code>, and the trace records the fallback.</p>
+      <p style="margin:0;font-size:14px;color:var(--muted)">Why JSON by default: whether Flower Endeavor supports native tool calling is unconfirmed. The request carries only <code>model</code>, <code>instructions</code>, <code>input</code>, <code>max_output_tokens</code> (and, for native, <code>tools</code>); <code>input</code> is rebuilt from stored messages each turn because the runtime's default provider does not support <code>previous_response_id</code>.</p>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h3 class="ch">Six tools</h3>
+      <p class="cs">Pure functions of the evidence, standard library only (<code>tools.py</code>).</p>
+      <div class="tscroll"><table class="tbl">
+        <thead><tr><th>Tool</th><th>Returns</th></tr></thead>
+        <tbody>
+          <tr><td><code>get_current_evidence</code></td><td>binding fields, next round, budget, threshold, latest round</td></tr>
+          <tr><td><code>get_history</code></td><td>every released round's aggregate summary</td></tr>
+          <tr><td><code>heterogeneity_diagnostics</code></td><td>Q, df, Q p-value, I², H², margin to the 0.50 threshold; leave-one-out ranges</td></tr>
+          <tr><td><code>list_actions</code></td><td>the catalog: what each action tests, releases, discloses, and which contract fields it changes</td></tr>
+          <tr><td><code>check_action</code></td><td>named preconditions passed and failed, resulting round and budget</td></tr>
+          <tr><td><code>submit_proposal</code></td><td>accepted, or the list of schema, binding and precondition errors</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h3 class="ch">Mistakes come back as tool output</h3>
+      <p class="cs">A rejected submission is not a crash; it is information the model can act on.</p>
+      <div class="lbl">submit_proposal, rejected (shape from <code>tools.py</code>)</div>
+      <pre class="json">{"accepted": false, "errors": ["&lt;field path&gt;: &lt;validation message&gt;", …]}</pre>
+      <p style="margin:0 0 10px;font-size:14px">Submissions are validated against the strict <code>FollowUpProposal</code> schema, the parent-result binding and the action's preconditions. The model reads the errors, fixes them and resubmits, within the caps.</p>
+      <div class="lbl">check_action, refused (from the sample ledger, round 2)</div>
+      <pre class="json">{"action": "LEAVE_ONE_SITE_OUT", "allowed": false,
+ "failed": ["NOT_ALREADY_RUN"], "would_be_round_index": 2, …}</pre>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3 class="ch">The action catalog</h3>
+    <p class="cs">Closed: three actions per data mode, each compiling deterministically to one contract shape that sites allowlist (<code>catalog.py</code>).</p>
+    <div class="tscroll"><table class="tbl" style="min-width:760px">
+      <thead><tr><th>Action</th><th>Sites release</th><th>Investigator receives</th><th>Preconditions</th></tr></thead>
+      <tbody>
+        <tr><td><code>LEAVE_ONE_SITE_OUT</code></td><td>the primary β, SE, N again; no new site-level quantity</td><td>range of pooled β and I² over omissions; how many omissions clear the flag; no site identities</td><td><div class="pre-list"><code>BUDGET_REMAINING</code><code>NOT_ALREADY_RUN</code><code>PRIMARY_HETEROGENEITY_FLAG_SET</code><code>LATEST_ROUND_RELEASED_AGGREGATE</code><code>AT_LEAST_THREE_PRIMARY_ESTIMATES</code></div></td></tr>
+        <tr><td><code>STRATIFY_GDSC_LINEAGE</code></td><td>β, SE, N per stratum (SKCM, non-SKCM): new site-level information</td><td>per-stratum pooled β, CI, Q, I²</td><td><div class="pre-list"><code>BUDGET_REMAINING</code><code>NOT_ALREADY_RUN</code><code>PRIMARY_HETEROGENEITY_FLAG_SET</code><code>LATEST_ROUND_RELEASED_AGGREGATE</code><code>AT_LEAST_TWO_PRIMARY_ESTIMATES</code></div></td></tr>
+        <tr><td><code>STOP_NO_FOLLOWUP</code></td><td>nothing</td><td>nothing</td><td><div class="pre-list"><code>ALWAYS_PERMITTED</code></div></td></tr>
+      </tbody>
+    </table></div>
+    <p class="foot">The synthetic data mode swaps the stratification for <code>STRATIFY_SYNTHETIC_CONTEXT</code>. Leave-one-site-out runs as its own approved round so that releasing the omission summaries is a separately authorised act.</p>
   </div>
 </section>
 
 <section id="boundaries">
   <div class="eyebrow">Disclosure</div>
   <h2>Who sees what</h2>
-  <p class="lead">The data gets smaller at every hop. Three lines are enforced in code, and each party only receives what is listed in its column.</p>
+  <p class="lead">The data gets smaller at every hop. The model's whole view is <code>InvestigationEvidence</code> and the tool outputs derived from it, which have no field that could carry a site-level result.</p>
   <div class="see">
     <div class="who">
       <h3>SuperNode</h3>
@@ -470,7 +803,7 @@ body.capture *{transition:none!important;animation:none!important}
       <ul>
         <li class="rows">Cell-line rows and outcomes</li>
         <li class="site">Its own β, SE, N</li>
-        <li>Contract and approval</li>
+        <li>Contract, approval, its own allowlist</li>
       </ul>
     </div>
     <div class="wall" style="--c:var(--stop)" aria-hidden="true">
@@ -484,7 +817,8 @@ body.capture *{transition:none!important;animation:none!important}
       <ul>
         <li class="no">Cell-line rows and outcomes</li>
         <li class="site">Each site's β, SE, N and status</li>
-        <li class="net">Pooled β, 95% CI, I²</li>
+        <li class="site">Each omission, by site (LOSO)</li>
+        <li class="net">Pooled β, 95% CI, Q, I²</li>
       </ul>
     </div>
     <div class="wall" style="--c:var(--llm)" aria-hidden="true">
@@ -493,13 +827,14 @@ body.capture *{transition:none!important;animation:none!important}
       <div class="lane blocked" style="--d:var(--sum)"><i style="--dl:1.6s"></i></div>
     </div>
     <div class="who">
-      <h3>LLM call</h3>
-      <p class="role">Flower Endeavor, one call per run</p>
+      <h3>Investigator model</h3>
+      <p class="role">AgentApp, via tool outputs only</p>
       <ul>
         <li class="no">Cell-line rows and outcomes</li>
-        <li class="no">Each site's β, SE, N</li>
-        <li class="net">Pooled β, 95% CI, I²</li>
-        <li>Hash of the result, allowed actions</li>
+        <li class="no">Site β, SE, N or site identities</li>
+        <li class="net">Pooled and per-stratum β, CI, Q, I²</li>
+        <li class="net">LOSO ranges, identity-free</li>
+        <li>Binding hashes, budget, catalog</li>
       </ul>
     </div>
     <div class="wall" style="--c:var(--human)" aria-hidden="true">
@@ -508,49 +843,64 @@ body.capture *{transition:none!important;animation:none!important}
     </div>
     <div class="who">
       <h3>Human operator</h3>
-      <p class="role">the only one who can authorize</p>
+      <p class="role">the only one who can authorise</p>
       <ul>
-        <li>The LLM's proposal, schema-checked</li>
-        <li>The new contract and its hash</li>
-        <li>Decides whether a second run happens</li>
+        <li>The proposal and its rationale</li>
+        <li>The exact digest of the compiled contract</li>
+        <li>Approves or declines each round</li>
+        <li>Sole bridge between agent and Grid</li>
       </ul>
     </div>
   </div>
   <div class="walls-key">
-    <div class="card" style="--c:var(--stop)"><h3><i></i>Rows stay on the node</h3><p>Only an allowlisted <code>AssociationReply</code> leaves a site. Payloads are capped at 64 KiB.</p></div>
-    <div class="card" style="--c:var(--llm)"><h3><i></i>The LLM gets aggregates</h3><p><code>AgentEvidence</code> has no field for site-level results, so they cannot be passed along by mistake.</p></div>
-    <div class="card" style="--c:var(--human)"><h3><i></i>A proposal is not permission</h3><p>A second run needs a new contract hash and a fresh, expiring approval from a person.</p></div>
+    <div class="card" style="--c:var(--stop)"><h3><i></i>Rows stay on the node</h3><p>Only an allowlisted reply leaves a site. Payloads are capped at 64 KiB.</p></div>
+    <div class="card" style="--c:var(--llm)"><h3><i></i>The model gets aggregates</h3><p>Site-level results are stripped before any model call. Tests check every request sent to a model for site-level fields.</p></div>
+    <div class="card" style="--c:var(--human)"><h3><i></i>A proposal is not permission</h3><p>A follow-up runs only under a new contract digest and a fresh, expiring approval, within the budget the primary declared.</p></div>
   </div>
 </section>
 
 <section id="gate">
   <div class="eyebrow">The decision</div>
-  <h2>A gate made of plain code</h2>
-  <p class="lead">I² measures how much the sites disagree beyond chance. The rule that reads it is a few lines of ordinary code with three outcomes. Move the slider to see it flip at 0.50.</p>
+  <h2>A gate made of plain code, with a budget</h2>
+  <p class="lead">I² measures how much the sites disagree beyond chance. The gate reads it after the primary round; after a follow-up it only checks that the round produced an aggregate and that budget remains. Whether another query is worth running is the investigator's proposal and the operator's approval.</p>
   <div class="gate">
     <div class="card">
-      <label for="i2">Heterogeneity across sites</label>
-      <div class="i2"><span id="i2v">0.00</span><small>I²</small></div>
-      <div class="track">
+      <div class="row">
+        <span class="lab" id="rr-l">Rounds released so far (budget: primary + 2 follow-ups)</span>
+        <div class="seg" role="group" aria-labelledby="rr-l">
+          <button type="button" data-rr="1" aria-pressed="true">1 · primary</button>
+          <button type="button" data-rr="2" aria-pressed="false">2</button>
+          <button type="button" data-rr="3" aria-pressed="false">3</button>
+        </div>
+      </div>
+      <label for="i2">Heterogeneity across sites (latest primary)</label>
+      <div class="i2"><span id="i2v">0.000</span><small>I²</small></div>
+      <div class="track" id="i2track">
         <div class="thr"></div>
-        <input type="range" id="i2" min="0" max="1" step="0.01" value="0">
+        <input type="range" id="i2" min="0" max="1" step="0.001" value="0">
         <div class="ends"><span>0 · sites agree</span><span>1 · sites disagree</span></div>
       </div>
-      <label id="est-l">Usable site estimates</label>
-      <div class="seg" role="group" aria-labelledby="est-l">
-        <button type="button" data-est="3" aria-pressed="true">3</button>
-        <button type="button" data-est="2" aria-pressed="false">2</button>
-        <button type="button" data-est="1" aria-pressed="false">1</button>
+      <p class="gnote" id="gnote"></p>
+      <div class="row">
+        <span class="lab" id="est-l">Usable site estimates in the latest round</span>
+        <div class="seg" role="group" aria-labelledby="est-l">
+          <button type="button" data-est="3" aria-pressed="true">3</button>
+          <button type="button" data-est="2" aria-pressed="false">2</button>
+          <button type="button" data-est="1" aria-pressed="false">1</button>
+        </div>
       </div>
       <div class="presets">
-        <button class="btn" type="button" data-preset="0">GDSC run · I² = 0</button>
-        <button class="btn" type="button" data-preset="0.971">Synthetic run · I² = 0.971</button>
+        <button class="btn" type="button" data-preset="1,0">Hash split · I² 0</button>
+        <button class="btn" type="button" data-preset="1,0.618">Lineage split · I² 0.618</button>
+        <button class="btn" type="button" data-preset="2,0.618">After round 1</button>
+        <button class="btn" type="button" data-preset="3,0.618">After round 2</button>
       </div>
     </div>
     <div class="card outs" id="outs">
-      <div class="out stp" data-o="stop"><i class="pip"></i><div><b>STOP_INSUFFICIENT_EVIDENCE</b><span>Fewer than two estimates. Nothing to pool, nothing more runs.</span></div></div>
-      <div class="out fin" data-o="finish"><i class="pip"></i><div><b>FINISH_COMPATIBLE</b><span>I² below 0.50. Write the report. No second query is allowed.</span></div></div>
-      <div class="out inv" data-o="investigate"><i class="pip"></i><div><b>INVESTIGATE</b><span>I² at 0.50 or above. Send aggregates to the LLM for one bounded proposal.</span></div></div>
+      <div class="out stp" data-o="stop"><i class="pip"></i><div><b>STOP_INSUFFICIENT_EVIDENCE</b><span>Fewer than two usable estimates (or an insufficient follow-up). Nothing more runs.</span></div></div>
+      <div class="out fin" data-o="finish"><i class="pip"></i><div><b>FINISH_COMPATIBLE</b><span>Primary I² below 0.50. The sites agree; no second query is authorised.</span></div></div>
+      <div class="out inv" data-o="investigate"><i class="pip"></i><div><b>INVESTIGATE</b><span>Primary I² at 0.50 or above, or budget remains after a follow-up. The investigator may plan; it may also propose to stop.</span></div></div>
+      <div class="out stp" data-o="budget"><i class="pip"></i><div><b>BUDGET_EXHAUSTED</b><span>The contract-declared follow-ups are spent. No further query is authorised, whatever the evidence says.</span></div></div>
     </div>
   </div>
 </section>
@@ -558,125 +908,151 @@ body.capture *{transition:none!important;animation:none!important}
 <section id="tech">
   <div class="eyebrow">Technical details</div>
   <h2>How it is built</h2>
-  <p class="lead">Seven decisions that shape the code.</p>
+  <p class="lead">Each follow-up contract binds the hash of the result it follows and of the exact proposal the operator reviewed. This is the chain from the lineage-enriched sample ledger:</p>
+  <div class="hchain" id="hchain" aria-label="Hash chain of contracts, results and proposals from the sample ledger"></div>
   <div class="tools">
     <div class="card tool">
       <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
-      <h3>Hash-bound, frozen contracts</h3>
-      <p>Every schema is a frozen Pydantic model that forbids extra fields and NaN. The contract's canonical JSON (sorted keys, compact) is hashed with SHA-256, and the approval carries that hash plus a timezone-aware expiry.</p>
+      <h3>Hash-bound contract chain</h3>
+      <p>Every analysis is a frozen Pydantic model (<code>extra="forbid"</code>, no NaN/Inf), serialised to canonical JSON and identified by its SHA-256. Approvals bind to that digest and expire. Follow-ups carry their round index and the chain's budget.</p>
     </div>
     <div class="card tool">
-      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.800-1.200-8-4.500-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
-      <h3>Sites re-check everything</h3>
-      <p>A valid approval is not enough. Each node validates it again and compares the analysis to a closed allowlist, then enforces minimum sample size and group support before computing anything.</p>
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <h3>A closed policy table at each site</h3>
+      <p><code>SITE_POLICIES</code> is site-local and deliberately does not import the shared catalog. A valid approval for an analysis outside it, or beyond the site's cap of 3 rounds, is refused (<code>QUERY_BUDGET_EXHAUSTED</code>, <code>ROUND_TEMPLATE_MISMATCH</code>).</p>
     </div>
     <div class="card tool">
       <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M7 15l4-5 3 2 5-6"/></svg></div>
       <h3>OLS-HC3 in plain NumPy</h3>
-      <p>The regression and its heteroskedasticity-robust standard error are written by hand, so the deployed bundle needs neither SciPy nor statsmodels. Tests match statsmodels 0.14.5 to a relative tolerance of 1e-10.</p>
+      <p>Written by hand and matched to <code>statsmodels</code> 0.14.5 at a relative tolerance of 1e-10. The agent bundle has no numerical dependency: its Q p-value is a standard-library chi-square tail, checked against SciPy to 1e-9.</p>
     </div>
     <div class="card tool">
-      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h6M4 12h6M4 18h6"/><path d="M10 6c5 0 4 6 10 6M10 18c5 0 4-6 10-6M10 12h10"/></svg></div>
-      <h3>Fixed-effect meta-analysis</h3>
-      <p>Site estimates are combined by inverse-variance weighting, with a 95% interval, Cochran Q and I². Missing, invalid and duplicate replies are tracked as explicit states, so a partial result is reported as partial.</p>
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 11l7-4M8.5 13l7 4"/><path d="M3 3l18 18" opacity=".5"/></svg></div>
+      <h3>Leave-one-site-out</h3>
+      <p>Pools the network with each site omitted and matches direct recomputation to 1e-12. The operator sees each omission by site; the investigator gets only identity-free ranges and a count of omissions that clear the flag.</p>
     </div>
     <div class="card tool">
-      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/></svg></div>
-      <h3>A closed-world LLM step</h3>
-      <p>The model gets no tools. It makes a single call, sees aggregates, and must answer in a strict schema with literal-typed actions. The output is checked against the study, analysis and parent hash. One repair attempt, then the run fails.</p>
-    </div>
-    <div class="card tool">
-      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></div>
-      <h3>Results travel as log frames</h3>
-      <p>Each app prints one framed line, <code>COHORTLENS_RESULT_V1 {json}</code>. The operator extracts exactly one valid frame from the run log. Identical replays are accepted, conflicting frames fail.</p>
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="6" height="6" rx="1"/><rect x="15" y="4" width="6" height="6" rx="1"/><rect x="9" y="14" width="6" height="6" rx="1"/><path d="M9 7h6M18 10l-3 4M6 10l3 4"/></svg></div>
+      <h3>Hash-chained ledger</h3>
+      <p>Append-only JSONL; each entry's <code>entry_hash</code> covers all its other fields, including <code>prev_hash</code>. <code>cohortlens verify-ledger</code> rejects edited, removed, inserted or reordered entries. Full released results go to the output directory, not the ledger.</p>
     </div>
     <div class="card tool">
       <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="8" height="12" rx="2"/><rect x="13" y="6" width="8" height="12" rx="2"/></svg></div>
-      <h3>Two bundles, one bridge</h3>
-      <p>A Flower App Bundle holds either a ServerApp with its ClientApp or an AgentApp, not all three. So analytics and the LLM step ship separately, and the human operator is the only link between them.</p>
+      <h3>Two bundles, staged separately</h3>
+      <p>A Flower App Bundle holds either an AgentApp or a ServerApp + ClientApp. <code>stage_apps.py</code> copies only what each imports: schemas, catalog, tools, investigator into the agent; schemas, catalog, statistics, gdsc into analytics. A test fails on drift.</p>
+    </div>
+    <div class="card tool">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 17h16"/><circle cx="8" cy="7" r="2"/><circle cx="16" cy="17" r="2"/></svg></div>
+      <h3>Local and SuperGrid backends</h3>
+      <p><code>run-study</code> drives the loop behind one interface. <code>local</code> runs the real handlers in-process over an in-memory grid; <code>supergrid</code> calls <code>flwr run … --stream</code> and <code>flwr log</code>. The latter is tested only for command construction and log parsing.</p>
+    </div>
+    <div class="card tool">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></div>
+      <h3>Log-framed transport</h3>
+      <p>Each app prints one framed line (<code>COHORTLENS_RESULT_V1</code> or <code>COHORTLENS_AGENT_RESULT_V2</code>); the operator carries validated artifacts between bundles. Missing, invalid and duplicate replies are recorded; results are <code>COMPLETE</code>, <code>PARTIAL</code> or <code>INSUFFICIENT</code>.</p>
     </div>
   </div>
 </section>
 
 <section id="results">
-  <div class="eyebrow">Recorded runs</div>
+  <div class="eyebrow">Evidence</div>
   <h2>What actually ran</h2>
-  <p class="lead">Two recorded deployments on Flower SuperGrid, each with three registered SuperNodes.</p>
-  <div class="results">
+  <p class="lead">Three different kinds of evidence, kept apart on purpose.</p>
+  <div class="note"><b>Read this before the numbers.</b> The live SuperGrid runs below used the <em>previous</em> single-call investigator. The new tool-using loop has run offline only, on the local backend with a scripted policy and fake model clients. No live SuperGrid run and no real-model run of it is recorded yet.</div>
+
+  <div class="rgrid results">
     <div class="card">
-      <h3>Public GDSC2 data</h3>
-      <p class="q">Is BRAF V600E associated with response to PLX-4720 across three sites?</p>
+      <span class="rtag a">A · Live on SuperGrid · previous investigator</span>
+      <h3>GDSC2 primary</h3>
+      <p class="q">Is BRAF V600E associated with response to PLX-4720 across three SuperNodes? Flower 1.37.0, 2026-09-16.</p>
       <div class="kv">
         <div><b>3 of 3</b>SuperNodes replied</div>
         <div><b>938</b>cell lines (291 / 306 / 341)</div>
         <div><b>0</b>I², no disagreement</div>
       </div>
-      <div class="ci">
-        <svg viewBox="0 0 520 78" role="img" aria-label="Pooled coefficient minus 2.3148 with 95 percent interval from minus 2.8232 to minus 1.8063, entirely below zero">
-          <line x1="20" y1="40" x2="500" y2="40" stroke="var(--line)" stroke-width="1.5"/>
-          <line x1="440" y1="14" x2="440" y2="52" stroke="var(--faint)" stroke-width="1.5" stroke-dasharray="4 4"/>
-          <line x1="44.750" y1="40" x2="187.120" y2="40" stroke="var(--accent-deep)" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="115.930" cy="40" r="7" fill="var(--accent-deep)" stroke="var(--paper)" stroke-width="2"/>
-          <text x="116" y="22" text-anchor="middle" style="font-weight:600;fill:var(--ink);font-size:12.5px">β = −2.3148</text>
-          <text x="20" y="68" text-anchor="middle">−3</text><text x="160" y="68" text-anchor="middle">−2</text><text x="300" y="68" text-anchor="middle">−1</text><text x="440" y="68" text-anchor="middle">0</text>
-          <line x1="20" y1="36" x2="20" y2="44" stroke="var(--faint)"/><line x1="160" y1="36" x2="160" y2="44" stroke="var(--faint)"/><line x1="300" y1="36" x2="300" y2="44" stroke="var(--faint)"/>
-        </svg>
-      </div>
+      <div class="forest" id="f-live"></div>
       <span class="tag">FINISH_COMPATIBLE</span>
-      <p class="foot">Pooled β in ln µM, 95% CI [−2.8232, −1.8063]. Lower LN_IC50 means more measured sensitivity in this assay. The sites agreed, so the gate stopped after one round and no follow-up was run.</p>
+      <p class="foot">Pooled β in ln µM. Lower LN_IC50 means greater measured sensitivity, so the negative coefficient is in the expected direction. The sites agreed, so no investigator call or second query was authorised.</p>
     </div>
     <div class="card">
-      <h3>Synthetic data</h3>
-      <p class="q">Three sites of 1,500 generated rows each, built to disagree.</p>
+      <span class="rtag a">A · Live on SuperGrid · previous investigator</span>
+      <h3>Synthetic full loop</h3>
+      <p class="q">Three sites of 1,500 generated rows, with a hidden context variable that changes the effect.</p>
       <div class="kv">
-        <div><b>0.5108</b>pooled β, first run</div>
+        <div><b>0.5108</b>pooled β, primary</div>
         <div><b>97.1%</b>I², strong disagreement</div>
-        <div><b>3 of 3</b>sites in both strata</div>
+        <div><b>3 of 3</b>sites in each stratum</div>
       </div>
       <div class="chain">
         <span class="tag inv">INVESTIGATE</span><span class="ar">→</span>
-        <span>LLM proposal</span><span class="ar">→</span>
+        <span>single-call proposal (no tools)</span><span class="ar">→</span>
         <span>operator approval</span><span class="ar">→</span>
         <span>stratified run</span>
       </div>
       <div class="kv" style="grid-template-columns:1fr 1fr">
-        <div><b>0.140</b>stratum 1 β, I² 0%</div>
-        <div><b>0.862</b>stratum 2 β, I² 0%</div>
+        <div><b>0.140</b>context_0 β, I² 0%</div>
+        <div><b>0.862</b>context_1 β, I² 0%</div>
       </div>
-      <p class="foot">Splitting by context removed the disagreement inside each stratum. Two earlier live attempts failed strict validation and were stopped, which is the design working as intended.</p>
+      <p class="foot">Heterogeneity disappears within each stratum, consistent with the generator. Two failed live probes are part of the record: one model reply had an unapproved JSON shape and validation stopped the run before any analytics.</p>
     </div>
   </div>
-  <div class="note"><b>Read this before the numbers.</b> The full investigate, approve and stratify loop has run live only on synthetic data. On real GDSC2 data the three sites agreed, so the pipeline correctly stopped after the first round.</div>
+
+  <div class="rgrid results" style="margin-top:14px">
+    <div class="card">
+      <span class="rtag b">B · The new loop · verified offline only</span>
+      <h3>What is verified, and what is not</h3>
+      <p class="q">110 offline tests against fake grids and fake model clients, about 3 seconds.</p>
+      <ul class="vlist">
+        <li class="y"><i>✓</i><span>Both tool protocols with fake models, including malformed turns, cap exhaustion, repair after a rejected submission, and protocol fallback</span></li>
+        <li class="y"><i>✓</i><span>No request to a model contains a site-level field</span></li>
+        <li class="y"><i>✓</i><span>Site refusals, including over-budget contracts with valid approvals</span></li>
+        <li class="y"><i>✓</i><span>The orchestrated loop end to end; ledger tamper detection</span></li>
+        <li class="n"><i>✗</i><span>Not yet run against Flower Endeavor or any real model; Endeavor's native tool-calling support is unconfirmed</span></li>
+        <li class="n"><i>✗</i><span><code>run-study --backend supergrid</code> not executed; the investigate–approve–follow-up loop has not run on GDSC2 data on SuperGrid</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="rtag c">C · Offline sample ledgers · scripted policy</span>
+      <h3>GDSC2 numbers from the replayed runs</h3>
+      <p class="q">Local backend, no Flower runtime, no language model. Lineage-enriched-v1 is a deliberately non-IID split built to exercise the loop.</p>
+      <div class="forest" id="f-off"></div>
+      <p class="foot">Two different single omissions each clear the flag, so no one site alone explains the disagreement. Within SKCM the sites agree and the association is stronger; within non-SKCM they still disagree. The hash-split primary reproduces the live SuperGrid primary exactly.</p>
+    </div>
+  </div>
+
   <div class="nums">
-    <div class="card"><b>59</b><span>offline tests, about 2.5 s</span></div>
-    <div class="card"><b>20</b><span>strict Pydantic schemas</span></div>
+    <div class="card"><b>110</b><span>offline tests, about 3 s</span></div>
+    <div class="card"><b>6</b><span>investigator tools</span></div>
+    <div class="card"><b>3</b><span>catalog actions per data mode</span></div>
+    <div class="card"><b>13</b><span>operator CLI commands</span></div>
     <div class="card"><b>2</b><span>Flower App Bundles</span></div>
-    <div class="card"><b>11</b><span>operator CLI subcommands</span></div>
-    <div class="card"><b>~3,200</b><span>lines of Python, plus tests</span></div>
+    <div class="card"><b>~6,000</b><span>lines of Python, plus ~2,300 of tests</span></div>
   </div>
 </section>
 
 <section id="limits">
   <div class="eyebrow">Limits</div>
   <h2>What this is not</h2>
-  <p class="lead">The project demonstrates a workflow. It does not make a scientific or a privacy claim beyond what is listed here.</p>
+  <p class="lead">The project demonstrates a governed workflow. It makes no scientific or privacy claim beyond what is listed here.</p>
   <div class="limits">
     <div class="card">
       <h3>About the federation</h3>
       <ul>
-        <li><b>The federation is emulated.</b> The three sites are hash partitions of one public dataset, not independent labs.</li>
-        <li><b>No secure aggregation or differential privacy.</b> Rows stay local, but that is not a confidentiality guarantee.</li>
-        <li><b>The coordinator sees site summaries.</b> Result frames are also visible to anyone who can read the run logs.</li>
-        <li><b>A dishonest site would go unnoticed.</b> Hashes and approvals prevent protocol mistakes. They do not prove a site computed honestly.</li>
+        <li><b>The federation is emulated.</b> Three partitions of one public dataset on one development host, not independent laboratories.</li>
+        <li><b>No secure aggregation or differential privacy.</b> The coordinator receives site summaries, and result frames are visible to anyone who can read run logs.</li>
+        <li><b>Validation is not attestation.</b> Hashes, approvals and reply checks catch protocol mistakes; they cannot prove a site used honest records or calculations.</li>
+        <li><b>The budget is per contract.</b> Sites keep no cross-run memory, so re-approving a new primary starts a new chain. The ledger records it; nothing prevents it.</li>
+        <li><b>The site roster is a label,</b> not an enforced list of node identities.</li>
       </ul>
     </div>
     <div class="card">
-      <h3>About the science and the LLM</h3>
+      <h3>About the science and the agent</h3>
       <ul>
-        <li><b>Cell lines, not patients.</b> The data is public in-vitro drug-response measurements.</li>
-        <li><b>Associations, not clinical findings.</b> Nothing here shows causality, clinical benefit or a validated biomarker.</li>
-        <li><b>The LLM step is one schema-bounded call.</b> It has no tools and almost no latitude. It is not a tool-using agent.</li>
-        <li><b>The follow-up is exploratory.</b> It reuses the same records, so it is not a replication.</li>
+        <li><b>Cell lines, not patients.</b> Associations here are not clinical findings.</li>
+        <li><b>Three sites is very few.</b> Heterogeneity estimates are unstable, leave-one-site-out pools two, and the LOSO range plus the full pooled estimate are close to site-level information even without identities.</li>
+        <li><b>The lineage-enriched split is artificial.</b> It is deliberately non-IID to exercise the loop, not an estimate of real between-laboratory heterogeneity.</li>
+        <li><b>Follow-ups are exploratory.</b> They reuse the same records; they are not replication.</li>
+        <li><b>The tool loop has not met a real model yet.</b> The sample runs use a scripted policy; the loop has not run against Flower Endeavor.</li>
       </ul>
     </div>
   </div>
@@ -688,145 +1064,636 @@ body.capture *{transition:none!important;animation:none!important}
 <footer>
   <div class="wrap">
     <div>
-      <div>CohortLens · personal project · <a href="https://github.com/apzl/cohort-lens">github.com/apzl/cohort-lens</a></div>
+      <div>CohortLens v0.2.0 · personal project · <a href="https://github.com/apzl/cohort-lens">github.com/apzl/cohort-lens</a></div>
       <ul class="stack">
-        <li>Python 3.11–3.12</li><li>Flower 1.37.0</li><li>Pydantic 2.13</li><li>NumPy 2.4</li><li>OpenAI SDK (Responses API)</li><li>Flower Endeavor</li><li>pytest</li><li>uv</li>
+        <li>Python 3.11–3.12</li><li>Flower 1.37.0</li><li>Pydantic 2.13</li><li>NumPy 2.4</li><li>OpenAI SDK (Responses API)</li><li>Flower Endeavor (target)</li><li>pytest</li><li>uv</li>
       </ul>
     </div>
     <div>Data: GDSC2 release 8.5 and Sanger Cell Model Passports.<br>Apache-2.0.</div>
   </div>
 </footer>
 
+<script type="application/x-ndjson" id="ledger-lineage">
+{"entry_hash":"sha256:228c918ccfbe4c0ec5328ad8055107de9b3b384b3cbfb13847f600c76b63b6e7","entry_type":"STUDY_STARTED","payload":{"approver_mode":"SCRIPTED_NON_INTERACTIVE","assignment_sha256":"sha256:8bfbc061b8731a463b3e4cc7865740ac0dbee9e45fcf24341f14506ffd2dd57a","backend":"local","data_mode":"PUBLIC_GDSC","gdsc_release":"8.5-27Oct23","investigator":"scripted","loop_limits":{"max_invalid_turns":3,"max_output_tokens":2000,"max_steps":12,"max_tool_calls":16},"max_association_rounds":3,"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","primary_contract_hash":"sha256:5214ffd1f6327bd256fae89ff9b22e15901c3fe03ce627917e78f0faa899549d","protocol_fallback":true,"snapshot_set":"lineage-enriched-v1","snapshot_sha256":{"site-1":"sha256:45c63e4821b1a97cf5c8d4614e1114b81f0699d863fa3b407ab6aebc217e6ed4","site-2":"sha256:bddd46e1e63b7809a0f9510f9ec49cd1a34f0ce3232720357db72b882be3b36a","site-3":"sha256:b53f7dd2d6c11f97317fa97b6281ef60736930461e0e2ea49278271f9a688aec"},"tool_protocol":"json"},"prev_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","recorded_at":"2026-11-11T22:28:27+00:00","seq":0,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:ae0485babc081f111a719d8fa71a8a13f70ea26b218a576459125772c37b3ad6","entry_type":"CONTRACT_APPROVED","payload":{"analysis_id":"primary-lineage-enriched-sim-001","approval_id":"primary-lineage-enriched-sim-001-approval","approval_mode":"SCRIPTED_NON_INTERACTIVE","approved_at":"2026-11-11T22:28:27+00:00","approver":"demo-operator","contract":{"analysis_id":"primary-lineage-enriched-sim-001","cohort_rule_id":"GDSC2_PLX4720_MUTATION_COVERED_V1","covariate_ids":["TCGA_SKCM_VS_OTHER_V1"],"expected_sites":3,"max_association_rounds":3,"missingness_policy":"COMPLETE_CASE_FIXED","operation":"ASSOCIATE","phenotype_id":"GDSC2_PLX4720_LN_IC50","phenotype_unit":"ln_micromolar","privacy_policy_id":"PUBLIC_GDSC_RELEASE_V1","round_index":0,"schema_version":"1.0","site_roster_id":"GDSC2_LINEAGE_ENRICHED3_SIM_V1","statistical_policy_id":"OLS_HC3_FIXED_EFFECT_V1","strata":[],"study_id":"gdsc2-plx4720-braf-v600e","template_id":"ols_quantitative_v1","variant":{"dosage":"binary_presence","effect_allele":"PRESENT","key":"BRAF:p.V600E","reference_build":"CMP_DRIVER_SUMMARY_PINNED"}},"contract_hash":"sha256:5214ffd1f6327bd256fae89ff9b22e15901c3fe03ce627917e78f0faa899549d","expires_at":"2026-11-12T22:28:27+00:00","proposal_hash":null,"round_index":0},"prev_hash":"sha256:228c918ccfbe4c0ec5328ad8055107de9b3b384b3cbfb13847f600c76b63b6e7","recorded_at":"2026-11-11T22:28:27+00:00","seq":1,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:b1d4789d34295678da560403bc4883d9318fde8c97c054a093732bf02586c53f","entry_type":"RUN_SUBMITTED","payload":{"analysis_id":"primary-lineage-enriched-sim-001","backend":"local","contract_hash":"sha256:5214ffd1f6327bd256fae89ff9b22e15901c3fe03ce627917e78f0faa899549d","round_index":0,"template_id":"ols_quantitative_v1"},"prev_hash":"sha256:ae0485babc081f111a719d8fa71a8a13f70ea26b218a576459125772c37b3ad6","recorded_at":"2026-11-11T22:28:27+00:00","seq":2,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:ef94efd048253a69069abe318b9c2cfb95361a1daa12cc88718980db06a27dfa","entry_type":"RESULT_RELEASED","payload":{"aggregate_summary":{"action":"PRIMARY_ASSOCIATION","analysis_id":"primary-lineage-enriched-sim-001","contract_hash":"sha256:5214ffd1f6327bd256fae89ff9b22e15901c3fe03ce627917e78f0faa899549d","network":{"beta_meta":-2.409712979902934,"ci95_high":-1.9292962770854838,"ci95_low":-2.8901296827203846,"estimated_sites":3,"expected_sites":3,"heterogeneity_flag":true,"i2":0.6176926903876481,"q":5.231393566677916,"q_degrees_freedom":2,"standard_error_meta":0.2451105626619645,"status":"COMPLETE"},"result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","round_index":0,"status":"COMPLETE","strata":[]},"result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","result_type":"PHASE1_ASSOCIATION","round_index":0,"run_id":"local-in-process"},"prev_hash":"sha256:b1d4789d34295678da560403bc4883d9318fde8c97c054a093732bf02586c53f","recorded_at":"2026-11-11T22:28:27+00:00","seq":3,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:965c75767d97a86ed806a14e527526e0c7ee6ec888afb4607318a14c273ed3a1","entry_type":"GATE_DECISION","payload":{"decision":"INVESTIGATE","evidence_fields":["heterogeneity_flag","i2","estimated_sites"],"parent_analysis_id":"primary-lineage-enriched-sim-001","parent_result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","reason":"The predeclared heterogeneity warning fired with adequate site support.","round_index":0,"schema_version":"1.0","study_id":"gdsc2-plx4720-braf-v600e"},"prev_hash":"sha256:ef94efd048253a69069abe318b9c2cfb95361a1daa12cc88718980db06a27dfa","recorded_at":"2026-11-11T22:28:27+00:00","seq":4,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:20d3e18a478d44de788ce11b0934c2dba543b6437d163b41e12e0bf459dee85d","entry_type":"AGENT_INVOKED","payload":{"backend":"local","budget_remaining":2,"evidence_hash":"sha256:37af61806a56f472d8cb10d63c5f56487535fafcc265cb1a3a11017a83f4f291","parent_result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","round_index":1},"prev_hash":"sha256:965c75767d97a86ed806a14e527526e0c7ee6ec888afb4607318a14c273ed3a1","recorded_at":"2026-11-11T22:28:27+00:00","seq":5,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:2c58d5ecfdbb112016caac8f73aae07d17ced569b8f4c3e2e897cfaaadd93de1","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":1,"tool":"get_current_evidence"},"prev_hash":"sha256:20d3e18a478d44de788ce11b0934c2dba543b6437d163b41e12e0bf459dee85d","recorded_at":"2026-11-11T22:28:27+00:00","seq":6,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:054c382b610b6645ae214afb495a691ca5be53777ad8ac4d1a84ceb878161a4f","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"budget_remaining":2,"data_mode":"PUBLIC_GDSC","data_provenance":"GDSC2_8.5_LINEAGE_ENRICHED_SIM_V1","heterogeneity_threshold":0.5,"latest_round":{"action":"PRIMARY_ASSOCIATION","analysis_id":"primary-lineage-enriched-sim-001","contract_hash":"sha256:5214ffd1f6327bd256fae89ff9b22e15901c3fe03ce627917e78f0faa899549d","network":{"beta_meta":-2.409712979902934,"ci95_high":-1.9292962770854838,"ci95_low":-2.8901296827203846,"estimated_sites":3,"expected_sites":3,"heterogeneity_flag":true,"i2":0.6176926903876481,"q":5.231393566677916,"q_degrees_freedom":2,"standard_error_meta":0.2451105626619645,"status":"COMPLETE"},"result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","round_index":0,"status":"COMPLETE","strata":[]},"max_association_rounds":3,"next_round_index":1,"parent_analysis_id":"primary-lineage-enriched-sim-001","parent_result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","phenotype_unit":"ln_micromolar","study_id":"gdsc2-plx4720-braf-v600e"},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":1,"tool":"get_current_evidence"},"prev_hash":"sha256:2c58d5ecfdbb112016caac8f73aae07d17ced569b8f4c3e2e897cfaaadd93de1","recorded_at":"2026-11-11T22:28:27+00:00","seq":7,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:3c792a7a21415022fac857a3a5637dd9c59347ff1fa95d336518cd1118d374bd","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":2,"tool":"get_history"},"prev_hash":"sha256:054c382b610b6645ae214afb495a691ca5be53777ad8ac4d1a84ceb878161a4f","recorded_at":"2026-11-11T22:28:27+00:00","seq":8,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:ae6f7d602b05e70fdb98f4d69aa97476f181bc708d401c5b852e387e56a10768","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"rounds":[{"action":"PRIMARY_ASSOCIATION","analysis_id":"primary-lineage-enriched-sim-001","contract_hash":"sha256:5214ffd1f6327bd256fae89ff9b22e15901c3fe03ce627917e78f0faa899549d","network":{"beta_meta":-2.409712979902934,"ci95_high":-1.9292962770854838,"ci95_low":-2.8901296827203846,"estimated_sites":3,"expected_sites":3,"heterogeneity_flag":true,"i2":0.6176926903876481,"q":5.231393566677916,"q_degrees_freedom":2,"standard_error_meta":0.2451105626619645,"status":"COMPLETE"},"result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","round_index":0,"status":"COMPLETE","strata":[]}]},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":2,"tool":"get_history"},"prev_hash":"sha256:3c792a7a21415022fac857a3a5637dd9c59347ff1fa95d336518cd1118d374bd","recorded_at":"2026-11-11T22:28:27+00:00","seq":9,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:444a711aabf4c49670efbeba9eebe3c3abffb7a2a2160e6f5f4fa4f64a2aa3f0","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":3,"tool":"heterogeneity_diagnostics"},"prev_hash":"sha256:ae6f7d602b05e70fdb98f4d69aa97476f181bc708d401c5b852e387e56a10768","recorded_at":"2026-11-11T22:28:27+00:00","seq":10,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:8980ac58ea72157ea287e7649952c6a3b00ad1a2f13edca89edaa5c2481a33ef","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"action":"PRIMARY_ASSOCIATION","estimates":[{"available":true,"estimate":"network","estimated_sites":3,"h2":2.615696783338958,"heterogeneity_flag":true,"i2":0.6176926903876481,"i2_margin_to_threshold":0.11769269038764807,"i2_threshold":0.5,"q":5.231393566677916,"q_degrees_freedom":2,"q_p_value":0.0731168243574834,"status":"COMPLETE"}],"round_index":0},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":3,"tool":"heterogeneity_diagnostics"},"prev_hash":"sha256:444a711aabf4c49670efbeba9eebe3c3abffb7a2a2160e6f5f4fa4f64a2aa3f0","recorded_at":"2026-11-11T22:28:27+00:00","seq":11,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:eb3a71fac56e99c7b8890360781db8683e564131e7eff84fdce4a0437ed788c0","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":4,"tool":"list_actions"},"prev_hash":"sha256:8980ac58ea72157ea287e7649952c6a3b00ad1a2f13edca89edaa5c2481a33ef","recorded_at":"2026-11-11T22:28:27+00:00","seq":12,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:9a8d781f23a46f1982be348e1087d6174e3e18dce9e22bfba14865f0a06c336a","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"actions":[{"action":"STRATIFY_GDSC_LINEAGE","changed_contract_fields":["analysis_id","covariate_ids","parent_result_hash","proposal_hash","round_index","strata","template_id"],"disclosure_cost":"New site-level information: each site releases two stratum summaries it has not released before. Smaller strata are more identifying.","query_rounds_consumed":1,"released_to_coordinator":"Per site and stratum: beta, robust SE, N (two summaries per site).","released_to_investigator":"Per stratum: pooled beta, SE, 95% CI, Q, df, I2, status.","template_id":"ols_quantitative_lineage_stratified_v1","terminal":false,"what_it_tests":"Whether the effect differs between SKCM and non-SKCM lineages, i.e. whether a predeclared effect modifier explains the cross-site disagreement."},{"action":"LEAVE_ONE_SITE_OUT","changed_contract_fields":["analysis_id","parent_result_hash","proposal_hash","round_index","template_id"],"disclosure_cost":"No new site-level quantity beyond the primary model; consumes one approved round so the omission summaries are a separately authorised release.","query_rounds_consumed":1,"released_to_coordinator":"Per site: the same beta, robust SE, N as the primary model; the coordinator also releases the pooled result with each site omitted.","released_to_investigator":"Identity-free range of pooled beta and I2 across omissions, and how many single omissions clear the heterogeneity flag.","template_id":"ols_quantitative_loso_v1","terminal":false,"what_it_tests":"Whether the pooled estimate and the heterogeneity flag depend on any single site (sensitivity analysis)."},{"action":"STOP_NO_FOLLOWUP","changed_contract_fields":[],"disclosure_cost":"None.","query_rounds_consumed":0,"released_to_coordinator":"Nothing further.","released_to_investigator":"Nothing further.","template_id":null,"terminal":true,"what_it_tests":"Nothing; ends the investigation with the evidence already released."}],"note":"Proposals are recommendations; a human must approve a new contract."},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":4,"tool":"list_actions"},"prev_hash":"sha256:eb3a71fac56e99c7b8890360781db8683e564131e7eff84fdce4a0437ed788c0","recorded_at":"2026-11-11T22:28:27+00:00","seq":13,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:fa57a1a3a32285374d0ef67dddabf8a6079a1bfdb5fdfebd8e91050f204704c3","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{"action":"LEAVE_ONE_SITE_OUT"},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":5,"tool":"check_action"},"prev_hash":"sha256:9a8d781f23a46f1982be348e1087d6174e3e18dce9e22bfba14865f0a06c336a","recorded_at":"2026-11-11T22:28:27+00:00","seq":14,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:b63cb17cee1b9cf0136b2e52835f5e4e0ad46142cbafafd243c791952eafbd1d","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"action":"LEAVE_ONE_SITE_OUT","allowed":true,"budget_remaining_after":1,"failed":[],"passed":["BUDGET_REMAINING","NOT_ALREADY_RUN","PRIMARY_HETEROGENEITY_FLAG_SET","LATEST_ROUND_RELEASED_AGGREGATE","AT_LEAST_THREE_PRIMARY_ESTIMATES"],"would_be_round_index":1},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":5,"tool":"check_action"},"prev_hash":"sha256:fa57a1a3a32285374d0ef67dddabf8a6079a1bfdb5fdfebd8e91050f204704c3","recorded_at":"2026-11-11T22:28:27+00:00","seq":15,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:acb5d587395826d7831532c5a5dd938d98f021c96768bed012b3630627a54ca3","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{"action":"LEAVE_ONE_SITE_OUT","changed_contract_fields":["analysis_id","parent_result_hash","proposal_hash","round_index","template_id"],"disclosure_cost":"No new site-level quantity beyond the primary model; consumes one approved round so the omission summaries are a separately authorised release.","evidence_fields":["heterogeneity_flag","i2","q_p_value","estimated_sites","budget_remaining"],"expected_interpretive_value":"Whether the pooled estimate and the heterogeneity flag depend on any single site (sensitivity analysis).","parent_analysis_id":"primary-lineage-enriched-sim-001","parent_result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","rationale":"Primary I2 0.618 with 3 estimates; 2 follow-up round(s) remain. Scripted rule 3: check first whether one site drives the disagreement, at no new site-level disclosure.","round_index":1,"stop_condition":"Re-plan after the released aggregates; stop when the budget is spent or nothing permitted adds information.","study_id":"gdsc2-plx4720-braf-v600e"},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":6,"tool":"submit_proposal"},"prev_hash":"sha256:b63cb17cee1b9cf0136b2e52835f5e4e0ad46142cbafafd243c791952eafbd1d","recorded_at":"2026-11-11T22:28:27+00:00","seq":16,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:c82a2cc9517908237bc3c74680bd288238eb92a25b3c8abbfc2356d66df03900","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"accepted":true,"action":"LEAVE_ONE_SITE_OUT"},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":6,"tool":"submit_proposal"},"prev_hash":"sha256:acb5d587395826d7831532c5a5dd938d98f021c96768bed012b3630627a54ca3","recorded_at":"2026-11-11T22:28:27+00:00","seq":17,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:abb5b60e478b572ce254519d7c0384e11ad3fff25b5f6a4c5a7ac5cbcdf18dee","entry_type":"AGENT_PROPOSAL","payload":{"invalid_turns":0,"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","proposal":{"action":"LEAVE_ONE_SITE_OUT","changed_contract_fields":["analysis_id","parent_result_hash","proposal_hash","round_index","template_id"],"disclosure_cost":"No new site-level quantity beyond the primary model; consumes one approved round so the omission summaries are a separately authorised release.","evidence_fields":["heterogeneity_flag","i2","q_p_value","estimated_sites","budget_remaining"],"expected_interpretive_value":"Whether the pooled estimate and the heterogeneity flag depend on any single site (sensitivity analysis).","parent_analysis_id":"primary-lineage-enriched-sim-001","parent_result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","rationale":"Primary I2 0.618 with 3 estimates; 2 follow-up round(s) remain. Scripted rule 3: check first whether one site drives the disagreement, at no new site-level disclosure.","role":"investigator","round_index":1,"schema_version":"1.0","stop_condition":"Re-plan after the released aggregates; stop when the budget is spent or nothing permitted adds information.","study_id":"gdsc2-plx4720-braf-v600e"},"proposal_hash":"sha256:a1cef8d8bbbe04ef8cd4f60345917ff3281b8246b8fe3a4c08727e2b1a9651ed","protocol_requested":"json","protocol_used":"json","steps":6,"tool_calls":6},"prev_hash":"sha256:c82a2cc9517908237bc3c74680bd288238eb92a25b3c8abbfc2356d66df03900","recorded_at":"2026-11-11T22:28:27+00:00","seq":18,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:ef98142cabf0f7bb3f39f76a79d00bb1d28cdfe2a5c1f40b7f3ccb584b2c65af","entry_type":"CONTRACT_APPROVED","payload":{"analysis_id":"primary-lineage-enriched-sim-001-r1-loso","approval_id":"primary-lineage-enriched-sim-001-r1-loso-approval","approval_mode":"SCRIPTED_NON_INTERACTIVE","approved_at":"2026-11-11T22:28:27+00:00","approver":"demo-operator","contract":{"analysis_id":"primary-lineage-enriched-sim-001-r1-loso","cohort_rule_id":"GDSC2_PLX4720_MUTATION_COVERED_V1","covariate_ids":["TCGA_SKCM_VS_OTHER_V1"],"expected_sites":3,"max_association_rounds":3,"missingness_policy":"COMPLETE_CASE_FIXED","operation":"ASSOCIATE","parent_result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","phenotype_id":"GDSC2_PLX4720_LN_IC50","phenotype_unit":"ln_micromolar","privacy_policy_id":"PUBLIC_GDSC_RELEASE_V1","proposal_hash":"sha256:a1cef8d8bbbe04ef8cd4f60345917ff3281b8246b8fe3a4c08727e2b1a9651ed","round_index":1,"schema_version":"1.0","site_roster_id":"GDSC2_LINEAGE_ENRICHED3_SIM_V1","statistical_policy_id":"OLS_HC3_FIXED_EFFECT_V1","strata":[],"study_id":"gdsc2-plx4720-braf-v600e","template_id":"ols_quantitative_loso_v1","variant":{"dosage":"binary_presence","effect_allele":"PRESENT","key":"BRAF:p.V600E","reference_build":"CMP_DRIVER_SUMMARY_PINNED"}},"contract_hash":"sha256:682cafdb31d7f5781ce7c06e0add0a885eddc6315c51f7ae52cfd8c8662069bf","expires_at":"2026-11-12T22:28:27+00:00","proposal_hash":"sha256:a1cef8d8bbbe04ef8cd4f60345917ff3281b8246b8fe3a4c08727e2b1a9651ed","round_index":1},"prev_hash":"sha256:abb5b60e478b572ce254519d7c0384e11ad3fff25b5f6a4c5a7ac5cbcdf18dee","recorded_at":"2026-11-11T22:28:27+00:00","seq":19,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:381ceeaa376ed06b1bcc1e904de1951a75760f60ae7ca30f7e05eef359bd5aa3","entry_type":"RUN_SUBMITTED","payload":{"analysis_id":"primary-lineage-enriched-sim-001-r1-loso","backend":"local","contract_hash":"sha256:682cafdb31d7f5781ce7c06e0add0a885eddc6315c51f7ae52cfd8c8662069bf","round_index":1,"template_id":"ols_quantitative_loso_v1"},"prev_hash":"sha256:ef98142cabf0f7bb3f39f76a79d00bb1d28cdfe2a5c1f40b7f3ccb584b2c65af","recorded_at":"2026-11-11T22:28:27+00:00","seq":20,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:8ba5b4ce995496c79a0a3033c3e71f425fff4100f2427948a6d8013a2354fb31","entry_type":"RESULT_RELEASED","payload":{"aggregate_summary":{"action":"LEAVE_ONE_SITE_OUT","analysis_id":"primary-lineage-enriched-sim-001-r1-loso","contract_hash":"sha256:682cafdb31d7f5781ce7c06e0add0a885eddc6315c51f7ae52cfd8c8662069bf","loso":{"any_omission_clears_flag":true,"i2_max":0.8057136683831436,"i2_min":0.0,"omissions_clearing_flag":2,"omissions_evaluated":3,"pooled_beta_max":-1.8875185189992465,"pooled_beta_min":-2.751026855198662},"network":{"beta_meta":-2.409712979902934,"ci95_high":-1.9292962770854838,"ci95_low":-2.8901296827203846,"estimated_sites":3,"expected_sites":3,"heterogeneity_flag":true,"i2":0.6176926903876481,"q":5.231393566677916,"q_degrees_freedom":2,"standard_error_meta":0.2451105626619645,"status":"COMPLETE"},"result_hash":"sha256:aacf1f98bd4cb4aaeab3c3ba757bd5e6da7938316d8a6edaeb061c27d0317d29","round_index":1,"status":"COMPLETE","strata":[]},"result_hash":"sha256:aacf1f98bd4cb4aaeab3c3ba757bd5e6da7938316d8a6edaeb061c27d0317d29","result_type":"LEAVE_ONE_SITE_OUT","round_index":1,"run_id":"local-in-process"},"prev_hash":"sha256:381ceeaa376ed06b1bcc1e904de1951a75760f60ae7ca30f7e05eef359bd5aa3","recorded_at":"2026-11-11T22:28:27+00:00","seq":21,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:39c3be2966b5ff5409401b0d6d5c92698b832625cbf7e094dfc8ce25a2bb88d8","entry_type":"GATE_DECISION","payload":{"decision":"INVESTIGATE","evidence_fields":["status","budget_remaining"],"parent_analysis_id":"primary-lineage-enriched-sim-001-r1-loso","parent_result_hash":"sha256:aacf1f98bd4cb4aaeab3c3ba757bd5e6da7938316d8a6edaeb061c27d0317d29","reason":"Budget remains and the latest round released aggregates; the investigator may re-plan.","round_index":1,"schema_version":"1.0","study_id":"gdsc2-plx4720-braf-v600e"},"prev_hash":"sha256:8ba5b4ce995496c79a0a3033c3e71f425fff4100f2427948a6d8013a2354fb31","recorded_at":"2026-11-11T22:28:27+00:00","seq":22,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:de3dc9cea5708ec7bf35a0cbf2fb6c8adcebca649cf33d473b6c4d36f160d2ed","entry_type":"AGENT_INVOKED","payload":{"backend":"local","budget_remaining":1,"evidence_hash":"sha256:952709692a9c57cf766422dd0a7081f5504838d652c2d51c742e4208a34500dd","parent_result_hash":"sha256:aacf1f98bd4cb4aaeab3c3ba757bd5e6da7938316d8a6edaeb061c27d0317d29","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","round_index":2},"prev_hash":"sha256:39c3be2966b5ff5409401b0d6d5c92698b832625cbf7e094dfc8ce25a2bb88d8","recorded_at":"2026-11-11T22:28:27+00:00","seq":23,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:e86e15ae7baca316a20eda063a8f1aafbda318bd21b1b516453b7d89fa183709","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":1,"tool":"get_current_evidence"},"prev_hash":"sha256:de3dc9cea5708ec7bf35a0cbf2fb6c8adcebca649cf33d473b6c4d36f160d2ed","recorded_at":"2026-11-11T22:28:27+00:00","seq":24,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:8a01934126ae748dbd9fdebc71127f2d15117f6b3b542ad0ba2e7bf1619ac435","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"budget_remaining":1,"data_mode":"PUBLIC_GDSC","data_provenance":"GDSC2_8.5_LINEAGE_ENRICHED_SIM_V1","heterogeneity_threshold":0.5,"latest_round":{"action":"LEAVE_ONE_SITE_OUT","analysis_id":"primary-lineage-enriched-sim-001-r1-loso","contract_hash":"sha256:682cafdb31d7f5781ce7c06e0add0a885eddc6315c51f7ae52cfd8c8662069bf","loso":{"any_omission_clears_flag":true,"i2_max":0.8057136683831436,"i2_min":0.0,"omissions_clearing_flag":2,"omissions_evaluated":3,"pooled_beta_max":-1.8875185189992465,"pooled_beta_min":-2.751026855198662},"network":{"beta_meta":-2.409712979902934,"ci95_high":-1.9292962770854838,"ci95_low":-2.8901296827203846,"estimated_sites":3,"expected_sites":3,"heterogeneity_flag":true,"i2":0.6176926903876481,"q":5.231393566677916,"q_degrees_freedom":2,"standard_error_meta":0.2451105626619645,"status":"COMPLETE"},"result_hash":"sha256:aacf1f98bd4cb4aaeab3c3ba757bd5e6da7938316d8a6edaeb061c27d0317d29","round_index":1,"status":"COMPLETE","strata":[]},"max_association_rounds":3,"next_round_index":2,"parent_analysis_id":"primary-lineage-enriched-sim-001-r1-loso","parent_result_hash":"sha256:aacf1f98bd4cb4aaeab3c3ba757bd5e6da7938316d8a6edaeb061c27d0317d29","phenotype_unit":"ln_micromolar","study_id":"gdsc2-plx4720-braf-v600e"},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":1,"tool":"get_current_evidence"},"prev_hash":"sha256:e86e15ae7baca316a20eda063a8f1aafbda318bd21b1b516453b7d89fa183709","recorded_at":"2026-11-11T22:28:27+00:00","seq":25,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:832b67f9372c4d48384ab13d6b2f88b3d7577d54a8406fbf6c8a011f512b4566","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":2,"tool":"get_history"},"prev_hash":"sha256:8a01934126ae748dbd9fdebc71127f2d15117f6b3b542ad0ba2e7bf1619ac435","recorded_at":"2026-11-11T22:28:27+00:00","seq":26,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:0669d8499cf810f0d51017e22f3a1d2c727cda487c17096b73939e8b4c187f46","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"rounds":[{"action":"PRIMARY_ASSOCIATION","analysis_id":"primary-lineage-enriched-sim-001","contract_hash":"sha256:5214ffd1f6327bd256fae89ff9b22e15901c3fe03ce627917e78f0faa899549d","network":{"beta_meta":-2.409712979902934,"ci95_high":-1.9292962770854838,"ci95_low":-2.8901296827203846,"estimated_sites":3,"expected_sites":3,"heterogeneity_flag":true,"i2":0.6176926903876481,"q":5.231393566677916,"q_degrees_freedom":2,"standard_error_meta":0.2451105626619645,"status":"COMPLETE"},"result_hash":"sha256:2e572a3c817d029477318c0e5e452623c4111e75a20cb30a87f42e25da0f499a","round_index":0,"status":"COMPLETE","strata":[]},{"action":"LEAVE_ONE_SITE_OUT","analysis_id":"primary-lineage-enriched-sim-001-r1-loso","contract_hash":"sha256:682cafdb31d7f5781ce7c06e0add0a885eddc6315c51f7ae52cfd8c8662069bf","loso":{"any_omission_clears_flag":true,"i2_max":0.8057136683831436,"i2_min":0.0,"omissions_clearing_flag":2,"omissions_evaluated":3,"pooled_beta_max":-1.8875185189992465,"pooled_beta_min":-2.751026855198662},"network":{"beta_meta":-2.409712979902934,"ci95_high":-1.9292962770854838,"ci95_low":-2.8901296827203846,"estimated_sites":3,"expected_sites":3,"heterogeneity_flag":true,"i2":0.6176926903876481,"q":5.231393566677916,"q_degrees_freedom":2,"standard_error_meta":0.2451105626619645,"status":"COMPLETE"},"result_hash":"sha256:aacf1f98bd4cb4aaeab3c3ba757bd5e6da7938316d8a6edaeb061c27d0317d29","round_index":1,"status":"COMPLETE","strata":[]}]},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":2,"tool":"get_history"},"prev_hash":"sha256:832b67f9372c4d48384ab13d6b2f88b3d7577d54a8406fbf6c8a011f512b4566","recorded_at":"2026-11-11T22:28:27+00:00","seq":27,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:dda0088b7f932076e525e7d2110edc3791ed1b8cb84f646525bf33bb6f786268","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":3,"tool":"heterogeneity_diagnostics"},"prev_hash":"sha256:0669d8499cf810f0d51017e22f3a1d2c727cda487c17096b73939e8b4c187f46","recorded_at":"2026-11-11T22:28:27+00:00","seq":28,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:55cd25012ff1cc6d59111404f36c09214d9ebff808324a116f6a81edd29235e4","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"action":"LEAVE_ONE_SITE_OUT","estimates":[{"available":true,"estimate":"network","estimated_sites":3,"h2":2.615696783338958,"heterogeneity_flag":true,"i2":0.6176926903876481,"i2_margin_to_threshold":0.11769269038764807,"i2_threshold":0.5,"q":5.231393566677916,"q_degrees_freedom":2,"q_p_value":0.0731168243574834,"status":"COMPLETE"}],"leave_one_site_out":{"any_omission_clears_flag":true,"i2_max":0.8057136683831436,"i2_min":0.0,"omissions_clearing_flag":2,"omissions_evaluated":3,"pooled_beta_max":-1.8875185189992465,"pooled_beta_min":-2.751026855198662},"round_index":1},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":3,"tool":"heterogeneity_diagnostics"},"prev_hash":"sha256:dda0088b7f932076e525e7d2110edc3791ed1b8cb84f646525bf33bb6f786268","recorded_at":"2026-11-11T22:28:27+00:00","seq":29,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:cd81c6911c3cef4845b3b9f66ee16ffbbe3643ab2a4ac12d376c310e6d7ca32d","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":4,"tool":"list_actions"},"prev_hash":"sha256:55cd25012ff1cc6d59111404f36c09214d9ebff808324a116f6a81edd29235e4","recorded_at":"2026-11-11T22:28:27+00:00","seq":30,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:347a3a5f43a88c2cc35914aa7c1347fa08ce5f92a303122994b046287dd93ca1","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"actions":[{"action":"STRATIFY_GDSC_LINEAGE","changed_contract_fields":["analysis_id","covariate_ids","parent_result_hash","proposal_hash","round_index","strata","template_id"],"disclosure_cost":"New site-level information: each site releases two stratum summaries it has not released before. Smaller strata are more identifying.","query_rounds_consumed":1,"released_to_coordinator":"Per site and stratum: beta, robust SE, N (two summaries per site).","released_to_investigator":"Per stratum: pooled beta, SE, 95% CI, Q, df, I2, status.","template_id":"ols_quantitative_lineage_stratified_v1","terminal":false,"what_it_tests":"Whether the effect differs between SKCM and non-SKCM lineages, i.e. whether a predeclared effect modifier explains the cross-site disagreement."},{"action":"LEAVE_ONE_SITE_OUT","changed_contract_fields":["analysis_id","parent_result_hash","proposal_hash","round_index","template_id"],"disclosure_cost":"No new site-level quantity beyond the primary model; consumes one approved round so the omission summaries are a separately authorised release.","query_rounds_consumed":1,"released_to_coordinator":"Per site: the same beta, robust SE, N as the primary model; the coordinator also releases the pooled result with each site omitted.","released_to_investigator":"Identity-free range of pooled beta and I2 across omissions, and how many single omissions clear the heterogeneity flag.","template_id":"ols_quantitative_loso_v1","terminal":false,"what_it_tests":"Whether the pooled estimate and the heterogeneity flag depend on any single site (sensitivity analysis)."},{"action":"STOP_NO_FOLLOWUP","changed_contract_fields":[],"disclosure_cost":"None.","query_rounds_consumed":0,"released_to_coordinator":"Nothing further.","released_to_investigator":"Nothing further.","template_id":null,"terminal":true,"what_it_tests":"Nothing; ends the investigation with the evidence already released."}],"note":"Proposals are recommendations; a human must approve a new contract."},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":4,"tool":"list_actions"},"prev_hash":"sha256:cd81c6911c3cef4845b3b9f66ee16ffbbe3643ab2a4ac12d376c310e6d7ca32d","recorded_at":"2026-11-11T22:28:27+00:00","seq":31,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:ce029f2c198efd5cf505e5fac57f4992c6e7faa301444aa9c209a03fb951724d","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{"action":"LEAVE_ONE_SITE_OUT"},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":5,"tool":"check_action"},"prev_hash":"sha256:347a3a5f43a88c2cc35914aa7c1347fa08ce5f92a303122994b046287dd93ca1","recorded_at":"2026-11-11T22:28:27+00:00","seq":32,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:66e7bdd573a744ca159a875fc5b20174c1983d0d7e9be6e1657b586aa711cae7","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"action":"LEAVE_ONE_SITE_OUT","allowed":false,"budget_remaining_after":0,"failed":["NOT_ALREADY_RUN"],"passed":["BUDGET_REMAINING","PRIMARY_HETEROGENEITY_FLAG_SET","LATEST_ROUND_RELEASED_AGGREGATE","AT_LEAST_THREE_PRIMARY_ESTIMATES"],"would_be_round_index":2},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":5,"tool":"check_action"},"prev_hash":"sha256:ce029f2c198efd5cf505e5fac57f4992c6e7faa301444aa9c209a03fb951724d","recorded_at":"2026-11-11T22:28:27+00:00","seq":33,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:65b5a6864590337768cd0055eb5206deafe3437fd3e3ebc6373a970390412953","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{"action":"STRATIFY_GDSC_LINEAGE"},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":6,"tool":"check_action"},"prev_hash":"sha256:66e7bdd573a744ca159a875fc5b20174c1983d0d7e9be6e1657b586aa711cae7","recorded_at":"2026-11-11T22:28:27+00:00","seq":34,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:a3b9b5aa0602ac5945fc715e03d16e7f2137d5c5c4e36b6c84ffd241faeb9f28","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"action":"STRATIFY_GDSC_LINEAGE","allowed":true,"budget_remaining_after":0,"failed":[],"passed":["BUDGET_REMAINING","NOT_ALREADY_RUN","PRIMARY_HETEROGENEITY_FLAG_SET","LATEST_ROUND_RELEASED_AGGREGATE","AT_LEAST_TWO_PRIMARY_ESTIMATES"],"would_be_round_index":2},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":6,"tool":"check_action"},"prev_hash":"sha256:65b5a6864590337768cd0055eb5206deafe3437fd3e3ebc6373a970390412953","recorded_at":"2026-11-11T22:28:27+00:00","seq":35,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:69c0fb87263a9fe95235efda936eb15dc24342dd7fa802eb3e7bfe75978a5fe0","entry_type":"AGENT_TOOL_CALL","payload":{"arguments":{"action":"STRATIFY_GDSC_LINEAGE","changed_contract_fields":["analysis_id","covariate_ids","parent_result_hash","proposal_hash","round_index","strata","template_id"],"disclosure_cost":"New site-level information: each site releases two stratum summaries it has not released before. Smaller strata are more identifying.","evidence_fields":["heterogeneity_flag","i2","q_p_value","loso_flag_cleared","loso_i2_range","budget_remaining"],"expected_interpretive_value":"Whether the effect differs between SKCM and non-SKCM lineages, i.e. whether a predeclared effect modifier explains the cross-site disagreement.","parent_analysis_id":"primary-lineage-enriched-sim-001-r1-loso","parent_result_hash":"sha256:aacf1f98bd4cb4aaeab3c3ba757bd5e6da7938316d8a6edaeb061c27d0317d29","rationale":"Primary I2 0.618 with 3 estimates; 1 follow-up round(s) remain. LOSO: pooled beta range [-2.751, -1.888], I2 range [0.000, 0.806], 2 single omission(s) clear the flag. Scripted rule 3: test the predeclared effect modifier as the explanation.","round_index":2,"stop_condition":"Re-plan after the released aggregates; stop when the budget is spent or nothing permitted adds information.","study_id":"gdsc2-plx4720-braf-v600e"},"kind":"tool_call","policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":7,"tool":"submit_proposal"},"prev_hash":"sha256:a3b9b5aa0602ac5945fc715e03d16e7f2137d5c5c4e36b6c84ffd241faeb9f28","recorded_at":"2026-11-11T22:28:27+00:00","seq":36,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:f65f9c7c1d0931453a8f05f00d5f6819facc2a4a313d3c54daba3e64ed6ecd59","entry_type":"AGENT_TOOL_RESULT","payload":{"kind":"tool_result","ok":true,"output":{"accepted":true,"action":"STRATIFY_GDSC_LINEAGE"},"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","step":7,"tool":"submit_proposal"},"prev_hash":"sha256:69c0fb87263a9fe95235efda936eb15dc24342dd7fa802eb3e7bfe75978a5fe0","recorded_at":"2026-11-11T22:28:27+00:00","seq":37,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:84aaa1415534a6201c48f3ea7d2e5c0826e0ed1cc5e3fc5e25845971d1f756f9","entry_type":"AGENT_PROPOSAL","payload":{"invalid_turns":0,"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","proposal":{"action":"STRATIFY_GDSC_LINEAGE","changed_contract_fields":["analysis_id","covariate_ids","parent_result_hash","proposal_hash","round_index","strata","template_id"],"disclosure_cost":"New site-level information: each site releases two stratum summaries it has not released before. Smaller strata are more identifying.","evidence_fields":["heterogeneity_flag","i2","q_p_value","loso_flag_cleared","loso_i2_range","budget_remaining"],"expected_interpretive_value":"Whether the effect differs between SKCM and non-SKCM lineages, i.e. whether a predeclared effect modifier explains the cross-site disagreement.","parent_analysis_id":"primary-lineage-enriched-sim-001-r1-loso","parent_result_hash":"sha256:aacf1f98bd4cb4aaeab3c3ba757bd5e6da7938316d8a6edaeb061c27d0317d29","rationale":"Primary I2 0.618 with 3 estimates; 1 follow-up round(s) remain. LOSO: pooled beta range [-2.751, -1.888], I2 range [0.000, 0.806], 2 single omission(s) clear the flag. Scripted rule 3: test the predeclared effect modifier as the explanation.","role":"investigator","round_index":2,"schema_version":"1.0","stop_condition":"Re-plan after the released aggregates; stop when the budget is spent or nothing permitted adds information.","study_id":"gdsc2-plx4720-braf-v600e"},"proposal_hash":"sha256:b4f672b3c8def624e5b0bfb15549edb7720c8173ec1f85ff9f191b058816a93d","protocol_requested":"json","protocol_used":"json","steps":7,"tool_calls":7},"prev_hash":"sha256:f65f9c7c1d0931453a8f05f00d5f6819facc2a4a313d3c54daba3e64ed6ecd59","recorded_at":"2026-11-11T22:28:27+00:00","seq":38,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:024741ad6a3c6f6251e98e4ca4ac7be8460fecb5db18d684f865f7faf3a4dc64","entry_type":"CONTRACT_APPROVED","payload":{"analysis_id":"primary-lineage-enriched-sim-001-r2-lineage","approval_id":"primary-lineage-enriched-sim-001-r2-lineage-approval","approval_mode":"SCRIPTED_NON_INTERACTIVE","approved_at":"2026-11-11T22:28:27+00:00","approver":"demo-operator","contract":{"analysis_id":"primary-lineage-enriched-sim-001-r2-lineage","cohort_rule_id":"GDSC2_PLX4720_MUTATION_COVERED_V1","covariate_ids":["INTERCEPT_ONLY_AFTER_STRATIFICATION"],"expected_sites":3,"max_association_rounds":3,"missingness_policy":"COMPLETE_CASE_FIXED","operation":"ASSOCIATE","parent_result_hash":"sha256:aacf1f98bd4cb4aaeab3c3ba757bd5e6da7938316d8a6edaeb061c27d0317d29","phenotype_id":"GDSC2_PLX4720_LN_IC50","phenotype_unit":"ln_micromolar","privacy_policy_id":"PUBLIC_GDSC_RELEASE_V1","proposal_hash":"sha256:b4f672b3c8def624e5b0bfb15549edb7720c8173ec1f85ff9f191b058816a93d","round_index":2,"schema_version":"1.0","site_roster_id":"GDSC2_LINEAGE_ENRICHED3_SIM_V1","statistical_policy_id":"OLS_HC3_FIXED_EFFECT_V1","strata":["non_skcm","skcm"],"study_id":"gdsc2-plx4720-braf-v600e","template_id":"ols_quantitative_lineage_stratified_v1","variant":{"dosage":"binary_presence","effect_allele":"PRESENT","key":"BRAF:p.V600E","reference_build":"CMP_DRIVER_SUMMARY_PINNED"}},"contract_hash":"sha256:e6785e9932f69477117a98c214d08de6a81ea47bd07d7829aaee1bbed9734090","expires_at":"2026-11-12T22:28:27+00:00","proposal_hash":"sha256:b4f672b3c8def624e5b0bfb15549edb7720c8173ec1f85ff9f191b058816a93d","round_index":2},"prev_hash":"sha256:84aaa1415534a6201c48f3ea7d2e5c0826e0ed1cc5e3fc5e25845971d1f756f9","recorded_at":"2026-11-11T22:28:27+00:00","seq":39,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:0e9607c88be556749dd0e730d99ed6d766c572c3c03daf7756dc9ccf40fb58c1","entry_type":"RUN_SUBMITTED","payload":{"analysis_id":"primary-lineage-enriched-sim-001-r2-lineage","backend":"local","contract_hash":"sha256:e6785e9932f69477117a98c214d08de6a81ea47bd07d7829aaee1bbed9734090","round_index":2,"template_id":"ols_quantitative_lineage_stratified_v1"},"prev_hash":"sha256:024741ad6a3c6f6251e98e4ca4ac7be8460fecb5db18d684f865f7faf3a4dc64","recorded_at":"2026-11-11T22:28:27+00:00","seq":40,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:6cc01010b76a7633eabb8e64df49651a35f064659075b4013a8feff129cd0d17","entry_type":"RESULT_RELEASED","payload":{"aggregate_summary":{"action":"STRATIFY_GDSC_LINEAGE","analysis_id":"primary-lineage-enriched-sim-001-r2-lineage","contract_hash":"sha256:e6785e9932f69477117a98c214d08de6a81ea47bd07d7829aaee1bbed9734090","result_hash":"sha256:62c11d61f885a3e73f22c461b5efbe43c459424cbe693d17278c3b006b8749e7","round_index":2,"status":"COMPLETE","strata":[{"beta_meta":-1.9557592185197121,"ci95_high":-1.4436159074735917,"ci95_low":-2.4679025295658326,"estimated_sites":3,"expected_sites":3,"heterogeneity_flag":true,"i2":0.7654648715847374,"q":8.527507216142247,"q_degrees_freedom":2,"standard_error_meta":0.26129760767659205,"status":"COMPLETE","stratum_id":"non_skcm"},{"beta_meta":-3.419853568488485,"ci95_high":-2.4427883398528967,"ci95_low":-4.396918797124073,"estimated_sites":3,"expected_sites":3,"heterogeneity_flag":false,"i2":0.0,"q":1.0226243881506178,"q_degrees_freedom":2,"standard_error_meta":0.49850266767121854,"status":"COMPLETE","stratum_id":"skcm"}]},"result_hash":"sha256:62c11d61f885a3e73f22c461b5efbe43c459424cbe693d17278c3b006b8749e7","result_type":"PHASE2_STRATIFIED_ASSOCIATION","round_index":2,"run_id":"local-in-process"},"prev_hash":"sha256:0e9607c88be556749dd0e730d99ed6d766c572c3c03daf7756dc9ccf40fb58c1","recorded_at":"2026-11-11T22:28:27+00:00","seq":41,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:cb0a9e73542751094b2cf7fd4f1d4bbacfcce6edef6682fe363a9c0340d2ac7d","entry_type":"GATE_DECISION","payload":{"decision":"BUDGET_EXHAUSTED","evidence_fields":["budget_remaining"],"parent_analysis_id":"primary-lineage-enriched-sim-001-r2-lineage","parent_result_hash":"sha256:62c11d61f885a3e73f22c461b5efbe43c459424cbe693d17278c3b006b8749e7","reason":"The contract-declared follow-up budget is spent; no further query is authorized.","round_index":2,"schema_version":"1.0","study_id":"gdsc2-plx4720-braf-v600e"},"prev_hash":"sha256:6cc01010b76a7633eabb8e64df49651a35f064659075b4013a8feff129cd0d17","recorded_at":"2026-11-11T22:28:27+00:00","seq":42,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:878e324aa84dd71a01f1d6adad145f87749d2e06298b7a0ee1636a762850e099","entry_type":"STUDY_FINISHED","payload":{"final_result_hash":"sha256:62c11d61f885a3e73f22c461b5efbe43c459424cbe693d17278c3b006b8749e7","reason":"BUDGET_EXHAUSTED","rounds_run":3},"prev_hash":"sha256:cb0a9e73542751094b2cf7fd4f1d4bbacfcce6edef6682fe363a9c0340d2ac7d","recorded_at":"2026-11-11T22:28:27+00:00","seq":43,"study_id":"gdsc2-plx4720-braf-v600e"}
+</script>
+<script type="application/x-ndjson" id="ledger-hash">
+{"entry_hash":"sha256:15a93939cb7f770c1565298c16f90aba6e28f8803ae1648ddb6aea79073d5c3a","entry_type":"STUDY_STARTED","payload":{"approver_mode":"SCRIPTED_NON_INTERACTIVE","backend":"local","data_mode":"PUBLIC_GDSC","gdsc_release":"8.5-27Oct23","investigator":"scripted","loop_limits":{"max_invalid_turns":3,"max_output_tokens":2000,"max_steps":12,"max_tool_calls":16},"max_association_rounds":3,"policy_kind":"SCRIPTED_POLICY","policy_label":"cohortlens-scripted-policy-v1","primary_contract_hash":"sha256:b8cfa4987b3cf6cd277573c1cd8b6ed9b6f66c36eb691a7710b071c42baf5252","protocol_fallback":true,"snapshot_set":"hash-split-v1","snapshot_sha256":{"site-1":"sha256:9b55ab9bc8d6270b06d6e7933aa2a686452c9d1927674915221c7f44ca6ae82d","site-2":"sha256:9bc81868c3569aac2aa8abd4b620cac843742588166d17cb71537fec14249be1","site-3":"sha256:ff3f0f80558df60975d15ec9ca4d7120fea4e462e891d12a347f705bf65fb4c1"},"tool_protocol":"json"},"prev_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","recorded_at":"2026-11-11T22:28:28+00:00","seq":0,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:2addc6a43be5be8bcf3314920a982ca5923189006ea75a566f13504f371932a6","entry_type":"CONTRACT_APPROVED","payload":{"analysis_id":"primary-001","approval_id":"primary-001-approval","approval_mode":"SCRIPTED_NON_INTERACTIVE","approved_at":"2026-11-11T22:28:28+00:00","approver":"demo-operator","contract":{"analysis_id":"primary-001","cohort_rule_id":"GDSC2_PLX4720_MUTATION_COVERED_V1","covariate_ids":["TCGA_SKCM_VS_OTHER_V1"],"expected_sites":3,"max_association_rounds":3,"missingness_policy":"COMPLETE_CASE_FIXED","operation":"ASSOCIATE","phenotype_id":"GDSC2_PLX4720_LN_IC50","phenotype_unit":"ln_micromolar","privacy_policy_id":"PUBLIC_GDSC_RELEASE_V1","round_index":0,"schema_version":"1.0","site_roster_id":"GDSC2_MODEL_HASH3_V1","statistical_policy_id":"OLS_HC3_FIXED_EFFECT_V1","strata":[],"study_id":"gdsc2-plx4720-braf-v600e","template_id":"ols_quantitative_v1","variant":{"dosage":"binary_presence","effect_allele":"PRESENT","key":"BRAF:p.V600E","reference_build":"CMP_DRIVER_SUMMARY_PINNED"}},"contract_hash":"sha256:b8cfa4987b3cf6cd277573c1cd8b6ed9b6f66c36eb691a7710b071c42baf5252","expires_at":"2026-11-12T22:28:28+00:00","proposal_hash":null,"round_index":0},"prev_hash":"sha256:15a93939cb7f770c1565298c16f90aba6e28f8803ae1648ddb6aea79073d5c3a","recorded_at":"2026-11-11T22:28:28+00:00","seq":1,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:b70160cd15a4ec347d79155ca89d787a4fd5d46324555c4c8a134e3a5ddceade","entry_type":"RUN_SUBMITTED","payload":{"analysis_id":"primary-001","backend":"local","contract_hash":"sha256:b8cfa4987b3cf6cd277573c1cd8b6ed9b6f66c36eb691a7710b071c42baf5252","round_index":0,"template_id":"ols_quantitative_v1"},"prev_hash":"sha256:2addc6a43be5be8bcf3314920a982ca5923189006ea75a566f13504f371932a6","recorded_at":"2026-11-11T22:28:28+00:00","seq":2,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:0d490c6e689d590a6c371a3cc562deae67fcc307e96c19677d457a7f69b5295d","entry_type":"RESULT_RELEASED","payload":{"aggregate_summary":{"action":"PRIMARY_ASSOCIATION","analysis_id":"primary-001","contract_hash":"sha256:b8cfa4987b3cf6cd277573c1cd8b6ed9b6f66c36eb691a7710b071c42baf5252","network":{"beta_meta":-2.3147527938432506,"ci95_high":-1.806316582306483,"ci95_low":-2.8231890053800184,"estimated_sites":3,"expected_sites":3,"heterogeneity_flag":false,"i2":0.0,"q":0.6534240927862995,"q_degrees_freedom":2,"standard_error_meta":0.2594062303759018,"status":"COMPLETE"},"result_hash":"sha256:6568c2b3bb447da82a7e9a52972fd1267829d640f10a6f55d94651334b6850b5","round_index":0,"status":"COMPLETE","strata":[]},"result_hash":"sha256:6568c2b3bb447da82a7e9a52972fd1267829d640f10a6f55d94651334b6850b5","result_type":"PHASE1_ASSOCIATION","round_index":0,"run_id":"local-in-process"},"prev_hash":"sha256:b70160cd15a4ec347d79155ca89d787a4fd5d46324555c4c8a134e3a5ddceade","recorded_at":"2026-11-11T22:28:28+00:00","seq":3,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:ba760967937af19509b23a7efdfe73bc76d9e60b93c757935756cf0163671310","entry_type":"GATE_DECISION","payload":{"decision":"FINISH_COMPATIBLE","evidence_fields":["heterogeneity_flag","i2","estimated_sites"],"parent_analysis_id":"primary-001","parent_result_hash":"sha256:6568c2b3bb447da82a7e9a52972fd1267829d640f10a6f55d94651334b6850b5","reason":"The predeclared heterogeneity warning did not fire; no second query is authorized.","round_index":0,"schema_version":"1.0","study_id":"gdsc2-plx4720-braf-v600e"},"prev_hash":"sha256:0d490c6e689d590a6c371a3cc562deae67fcc307e96c19677d457a7f69b5295d","recorded_at":"2026-11-11T22:28:28+00:00","seq":4,"study_id":"gdsc2-plx4720-braf-v600e"}
+{"entry_hash":"sha256:fcc419c4fe0965340dc13a6f1545ebee05a28b04627df947a9058a00e32ed3f3","entry_type":"STUDY_FINISHED","payload":{"final_result_hash":"sha256:6568c2b3bb447da82a7e9a52972fd1267829d640f10a6f55d94651334b6850b5","reason":"FINISH_COMPATIBLE","rounds_run":1},"prev_hash":"sha256:ba760967937af19509b23a7efdfe73bc76d9e60b93c757935756cf0163671310","recorded_at":"2026-11-11T22:28:28+00:00","seq":5,"study_id":"gdsc2-plx4720-braf-v600e"}
+</script>
 <script>
 (function(){
-  var NS='http://www.w3.org/2000/svg';
-  var $=function(id){return document.getElementById(id)};
-  var D=16800;
-  var STEPS=[
-    {t:0,    title:'Contract and approval', text:'The operator writes one fixed question as a contract and binds a time-limited approval to its SHA-256 hash.', on:['n-op']},
-    {t:1500, title:'Preflight', text:'The ServerApp checks the approval and asks three SuperNodes if they can run it. Each node re-checks against its own allowlist.', on:['n-server']},
-    {t:3100, title:'Local regression', text:'Each node fits OLS with HC3 robust errors on its own rows. Only β, SE and N come back. The rows never leave the node.', on:['n-s1','n-s2','n-s3','b-rows']},
-    {t:5200, title:'Meta-analysis', text:'The ServerApp pools the three estimates with inverse-variance weights and measures disagreement between sites as I².', on:['n-meta']},
-    {t:6600, title:'Gate: sites agree', text:'A deterministic gate reads I². Below 0.50 the sites agree: write the report and stop. No second query is allowed.', on:['n-gate']},
-    {t:8000, title:'Gate: sites disagree', text:'At 0.50 or above the gate opens one path: send the pooled numbers, and nothing site-level, to a single LLM call.', on:['n-gate']},
-    {t:9400, title:'Bounded LLM proposal', text:'The model sees network aggregates only and must return one schema-checked proposal: compare melanoma with other lineages.', on:['n-llm','b-agg']},
-    {t:11000,title:'Human approval', text:'The LLM proposes, a human authorizes. The operator signs a new contract hash before anything runs again.', on:['n-human','b-auth']},
-    {t:12800,title:'Stratified second run', text:'The same loop runs once per stratum, skcm and non_skcm. Rows still stay on each node and only summaries return.', on:['n-server','n-s1','n-s2','n-s3','n-meta','b-rows']},
-    {t:15000,title:'Follow-up report', text:'Two stratum results, marked exploratory, go to a final report written from aggregates only.', on:['n-report']}
-  ];
-  var P=[
-    {e:'e1',a:500,b:1400,k:'req',l:'contract + approval'},
-    {e:'e2a',a:1700,b:2500,k:'req',l:'preflight'},{e:'e2b',a:1700,b:2500,k:'req'},{e:'e2c',a:1700,b:2500,k:'req'},
-    {e:'e2a',a:3100,b:3800,k:'req',l:'question'},{e:'e2b',a:3100,b:3800,k:'req'},{e:'e2c',a:3100,b:3800,k:'req'},
-    {e:'e3a',a:4400,b:5200,k:'sum',l:'β, SE, N'},{e:'e3b',a:4400,b:5200,k:'sum'},{e:'e3c',a:4400,b:5200,k:'sum'},
-    {e:'e4',a:6000,b:6600,k:'sum'},
-    {e:'e5',a:7000,b:7700,k:'sum'},
-    {e:'e6',a:8300,b:9400,k:'llm',l:'aggregates',side:1},
-    {e:'e7',a:10100,b:11000,k:'llm',l:'proposal'},
-    {e:'e8',a:11600,b:12800,k:'human',l:'new hash'},
-    {e:'e2a',a:12900,b:13550,k:'req',l:'per stratum'},{e:'e2b',a:12900,b:13550,k:'req'},{e:'e2c',a:12900,b:13550,k:'req'},
-    {e:'e2a',a:13100,b:13750,k:'req'},{e:'e2b',a:13100,b:13750,k:'req'},{e:'e2c',a:13100,b:13750,k:'req'},
-    {e:'e3a',a:14000,b:14700,k:'sum',l:'β, SE, N × 2'},{e:'e3b',a:14000,b:14700,k:'sum'},{e:'e3c',a:14000,b:14700,k:'sum'},
-    {e:'e3a',a:14200,b:14900,k:'sum'},{e:'e3b',a:14200,b:14900,k:'sum'},{e:'e3c',a:14200,b:14900,k:'sum'},
-    {e:'e9',a:15100,b:16100,k:'sum',l:'2 strata'}
-  ];
-  var layer=$('packets'), edges={}, lens={};
+'use strict';
+var NS='http://www.w3.org/2000/svg';
+var $=function(id){return document.getElementById(id)};
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function sel(tag,attrs){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e}
+
+/* ---------- SHA-256 (verifies the embedded ledger lines) ---------- */
+function sha256(ascii){
+  function rr(v,a){return (v>>>a)|(v<<(32-a))}
+  var mw=Math.pow(2,32),i,j,result='',words=[],abl=ascii.length*8;
+  var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pl=k.length,ic={};
+  for(var c=2;pl<64;c++){if(!ic[c]){for(i=0;i<313;i+=c)ic[i]=c;hash[pl]=(Math.pow(c,.5)*mw)|0;k[pl++]=(Math.pow(c,1/3)*mw)|0;}}
+  ascii+='\x80';while(ascii.length%64-56)ascii+='\x00';
+  for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);if(j>>8)return null;words[i>>2]|=j<<((3-i)%4)*8;}
+  words[words.length]=((abl/mw)|0);words[words.length]=abl;
+  for(j=0;j<words.length;){var w=words.slice(j,j+=16),old=hash;hash=hash.slice(0,8);
+    for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4];
+      var t1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);
+      var t2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+      hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0;}
+    for(i=0;i<8;i++)hash[i]=(hash[i]+old[i])|0;}
+  for(i=0;i<8;i++)for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;result+=((b<16)?0:'')+b.toString(16);}
+  return result;
+}
+
+/* ---------- ledger data ---------- */
+function loadLedger(id){
+  return $(id).textContent.split('\n').map(function(s){return s.trim()}).filter(Boolean).map(function(line){
+    var e=JSON.parse(line);e.raw=line;return e;
+  });
+}
+var RUNS={lineage:loadLedger('ledger-lineage'),hash:loadLedger('ledger-hash')};
+var L=RUNS.lineage;
+
+/* ---------- formatting ---------- */
+function num(x,d){if(x==null)return '—';var s=Math.abs(x).toFixed(d);return (x<0&&+s!==0?'−':'')+s}
+function i2s(x){return x===0?'0':num(x,3)}
+function sh(h){return h?h.replace('sha256:','').slice(0,8)+'…':'—'}
+function kind(t){
+  if(t==='CONTRACT_APPROVED'||t==='APPROVAL_DECLINED')return 'k-human';
+  if(t==='RUN_SUBMITTED'||t==='RESULT_RELEASED')return 'k-run';
+  if(t==='GATE_DECISION')return 'k-gate';
+  if(t.indexOf('AGENT_')===0)return 'k-agent';
+  return 'k-meta';
+}
+var ACTION_LABEL={PRIMARY_ASSOCIATION:'primary',LEAVE_ONE_SITE_OUT:'leave-one-site-out',STRATIFY_GDSC_LINEAGE:'lineage strata'};
+function argStr(a){if(!a)return '';return a.action?a.action:''}
+function toolResultShort(p){
+  var o=p.output||{};
+  if(p.tool==='check_action')return o.allowed?'allowed':'✗ '+(o.failed||[]).join(', ');
+  if(p.tool==='submit_proposal')return o.accepted?'accepted':'rejected';
+  return p.ok?'ok':'error';
+}
+function resultSummary(s){
+  if(s.action==='LEAVE_ONE_SITE_OUT'&&s.loso){var l=s.loso;return 'omit one site: pooled β '+num(l.pooled_beta_min,3)+' to '+num(l.pooled_beta_max,3)+' · '+l.omissions_clearing_flag+' of '+l.omissions_evaluated+' omissions clear the flag'}
+  if(s.strata&&s.strata.length)return s.strata.map(function(x){return x.stratum_id+' β '+num(x.beta_meta,3)+' · I² '+i2s(x.i2)}).join(' | ');
+  var n=s.network;return 'β '+num(n.beta_meta,4)+' [' +num(n.ci95_low,4)+', '+num(n.ci95_high,4)+'] · I² '+i2s(n.i2);
+}
+function summary(e){
+  var p=e.payload,t=e.entry_type;
+  switch(t){
+    case 'STUDY_STARTED':return p.backend+' backend · '+p.investigator+' investigator ('+p.policy_kind+') · '+p.tool_protocol+' protocol · up to '+p.max_association_rounds+' rounds';
+    case 'CONTRACT_APPROVED':return 'round '+p.round_index+' · '+p.contract.template_id+' · digest '+sh(p.contract_hash)+' · '+p.approver;
+    case 'RUN_SUBMITTED':return 'round '+p.round_index+' · '+p.template_id+' · '+p.backend;
+    case 'RESULT_RELEASED':return 'round '+p.round_index+' · '+resultSummary(p.aggregate_summary);
+    case 'GATE_DECISION':return p.decision;
+    case 'AGENT_INVOKED':return 'plan round '+p.round_index+' · budget remaining '+p.budget_remaining+' · '+p.policy_kind;
+    case 'AGENT_TOOL_CALL':return 'step '+p.step+' · '+p.tool+'('+argStr(p.arguments)+')';
+    case 'AGENT_TOOL_RESULT':return 'step '+p.step+' · '+p.tool+' → '+toolResultShort(p);
+    case 'AGENT_PROPOSAL':return p.proposal.action+' · '+p.steps+' steps · '+p.tool_calls+' tool calls · '+p.invalid_turns+' invalid';
+    case 'STUDY_FINISHED':return p.reason+' · '+p.rounds_run+' round'+(p.rounds_run===1?'':'s')+' run';
+  }
+  return '';
+}
+function byType(list,t){return list.filter(function(e){return e.entry_type===t})}
+var REL=byType(L,'RESULT_RELEASED').map(function(e){return e.payload.aggregate_summary});
+var APPR=byType(L,'CONTRACT_APPROVED').map(function(e){return e.payload});
+var PROPS=byType(L,'AGENT_PROPOSAL').map(function(e){return e.payload});
+
+/* ================= HERO LOOP ================= */
+var D=22000;
+// ledger append times (ms) for the 44 entries of the lineage run
+var LT=(function(){
+  var t=[100,300,1150,3600,4400,5300];
+  for(var i=0;i<6;i++){t.push(5400+i*330,5565+i*330)}
+  t.push(7300,8100,8900,10600,11000,11800);
+  for(i=0;i<7;i++){t.push(11900+i*330,12065+i*330)}
+  t.push(14100,14900,15600,17450,17800,18800);
+  return t;
+})();
+// agent invocations: [start,end, index of AGENT_INVOKED]
+var INV=[];L.forEach(function(e,i){if(e.entry_type==='AGENT_INVOKED')INV.push(i)});
+function invCalls(start){var out=[];for(var i=start+1;i<L.length&&L[i].entry_type.indexOf('AGENT_TOOL')===0;i+=2){out.push({i:i,call:L[i].payload,res:L[i+1].payload})}return out}
+var CALLS=INV.map(invCalls);
+
+var r0=REL[0].network,r1=REL[1].loso,st=REL[2].strata;
+var sk=st.filter(function(x){return x.stratum_id==='skcm'})[0],nsk=st.filter(function(x){return x.stratum_id==='non_skcm'})[0];
+var STEPS=[
+  {t:0,n:'R0',title:'Round 0 · the primary contract is approved',text:'The operator approves one fixed question: the SHA-256 digest of the primary contract ('+sh(APPR[0].contract_hash)+'), with an expiring approval.',on:['n-op','b-auth']},
+  {t:1200,n:'R0',title:'Fan-out and preflight',text:'The ServerApp sends the contract to three SuperNodes. Each re-checks the approval, its own allowlist and the query budget.',on:['n-server']},
+  {t:2300,n:'R0',title:'Local fit; the rows stay put',text:'Each site fits OLS with HC3 robust errors on its own rows. Only β, SE and N come back.',on:['n-s1','n-s2','n-s3','b-rows']},
+  {t:3600,n:'R0',title:'Pooled result: the sites disagree',text:'Inverse-variance pooling: β = '+num(r0.beta_meta,3)+', 95% CI ['+num(r0.ci95_low,3)+', '+num(r0.ci95_high,3)+'], I² = '+i2s(r0.i2)+'.',on:['n-meta']},
+  {t:4400,n:'R0',title:'Gate: INVESTIGATE',text:'Plain code, no model: I² ≥ 0.50 with 3 estimates opens an investigation. Only network aggregates go to the agent.',on:['n-gate']},
+  {t:5300,n:'R0',title:'The investigator calls tools',text:'Evidence, history, diagnostics, the action catalog, a precondition check, then one proposal. (Scripted policy in this run.)',on:['n-agent','b-agg']},
+  {t:7300,n:'R0',title:'Proposal: '+PROPS[0].proposal.action,text:'A proposal authorises nothing. The operator compiles a new parent-bound contract ('+sh(APPR[1].contract_hash)+') and signs it.',on:['n-op','b-auth']},
+  {t:8700,n:'R1',title:'Round 1 · leave-one-site-out',text:'Sites refit; the coordinator pools with each site left out: β '+num(r1.pooled_beta_min,3)+' to '+num(r1.pooled_beta_max,3)+'; '+r1.omissions_clearing_flag+' of '+r1.omissions_evaluated+' omissions clear the flag.',on:['n-server','n-s1','n-s2','n-s3','n-meta','b-rows']},
+  {t:11000,n:'R1',title:'Gate: budget remains',text:'After a follow-up the gate checks only status and budget. One follow-up is left, so the agent may re-plan.',on:['n-gate']},
+  {t:11800,n:'R1',title:'Re-plan with the new aggregates',text:'check_action refuses LEAVE_ONE_SITE_OUT (NOT_ALREADY_RUN). STRATIFY_GDSC_LINEAGE passes and is submitted.',on:['n-agent','b-agg']},
+  {t:14100,n:'R1',title:'Second proposal, second signature',text:'The operator signs contract '+sh(APPR[2].contract_hash)+', bound to the round-1 result hash. The agent cannot launch it itself.',on:['n-op','b-auth']},
+  {t:15400,n:'R2',title:'Round 2 · lineage strata',text:'Each site fits SKCM and non-SKCM separately. SKCM: β '+num(sk.beta_meta,3)+', I² '+i2s(sk.i2)+'. Non-SKCM: β '+num(nsk.beta_meta,3)+', I² '+i2s(nsk.i2)+'.',on:['n-server','n-s1','n-s2','n-s3','n-meta','b-rows']},
+  {t:17800,n:'R2',title:'Gate: BUDGET_EXHAUSTED',text:'Primary + 2 follow-ups are spent. The gate ends the study; no further query is authorised.',on:['n-gate']},
+  {t:18800,n:'END',title:'Report from the verified ledger',text:'Every gate, tool call, proposal, approval and released aggregate sits in a '+L.length+'-entry hash-chained ledger.',on:['n-report']}
+];
+var P=[
+  {e:'e-op',a:300,b:1100,k:'human',l:'approved',side:1},
+  {e:'e-s1',a:1250,b:1850,k:'req',l:'contract'},{e:'e-s2',a:1250,b:1850,k:'req'},{e:'e-s3',a:1250,b:1850,k:'req'},
+  {e:'e-r1',a:2900,b:3550,k:'sum',l:'β, SE, N'},{e:'e-r2',a:2900,b:3550,k:'sum'},{e:'e-r3',a:2900,b:3550,k:'sum'},
+  {e:'e-mg',a:3900,b:4350,k:'sum'},
+  {e:'e-ga',a:4650,b:5250,k:'llm',l:'aggregates',side:1},
+  {e:'e-ap',a:7350,b:8050,k:'llm',l:PROPS[0].proposal.action},
+  {e:'e-op',a:8150,b:8850,k:'human',l:sh(APPR[1].contract_hash),side:1},
+  {e:'e-s1',a:9000,b:9550,k:'req',l:'contract'},{e:'e-s2',a:9000,b:9550,k:'req'},{e:'e-s3',a:9000,b:9550,k:'req'},
+  {e:'e-r1',a:9950,b:10550,k:'sum',l:'β, SE, N'},{e:'e-r2',a:9950,b:10550,k:'sum'},{e:'e-r3',a:9950,b:10550,k:'sum'},
+  {e:'e-mg',a:10600,b:10950,k:'sum'},
+  {e:'e-ga',a:11250,b:11780,k:'llm',l:'aggregates',side:1},
+  {e:'e-ap',a:14150,b:14850,k:'llm',l:PROPS[1].proposal.action},
+  {e:'e-op',a:14950,b:15550,k:'human',l:sh(APPR[2].contract_hash),side:1},
+  {e:'e-s1',a:15700,b:16250,k:'req',l:'per stratum'},{e:'e-s2',a:15700,b:16250,k:'req'},{e:'e-s3',a:15700,b:16250,k:'req'},
+  {e:'e-r1',a:16600,b:17200,k:'sum',l:'β, SE, N × 2'},{e:'e-r2',a:16600,b:17200,k:'sum'},{e:'e-r3',a:16600,b:17200,k:'sum'},
+  {e:'e-r1',a:16750,b:17350,k:'sum'},{e:'e-r2',a:16750,b:17350,k:'sum'},{e:'e-r3',a:16750,b:17350,k:'sum'},
+  {e:'e-mg',a:17450,b:17780,k:'sum'},
+  {e:'e-gr',a:18050,b:18750,k:'sum',l:'BUDGET_EXHAUSTED'}
+];
+var layer=$('packets'),edges={},lens={};
+P.forEach(function(p){
+  if(!edges[p.e]){edges[p.e]=$(p.e);lens[p.e]=edges[p.e].getTotalLength();}
+  var g=sel('g',{'class':'pk '+p.k});g.style.display='none';
+  if(p.l){
+    var w=p.l.length*6.3+18,ox=p.side?14:-w/2,oy=p.side?-10:-31;
+    g.appendChild(sel('rect',{x:ox,y:oy,width:w,height:20,rx:10}));
+    var t=sel('text',{x:ox+w/2,y:oy+14});t.textContent=p.l;g.appendChild(t);
+  }
+  g.appendChild(sel('circle',{r:7}));
+  layer.appendChild(g);p.g=g;
+});
+// ledger blocks
+var lb=$('lblocks'),LB=[];
+L.forEach(function(e,i){
+  var r=sel('rect',{x:(140+i*23.6).toFixed(1),y:518,width:17,height:14,rx:3,'class':'lb off'});
+  var tt=sel('title',{});tt.textContent='#'+e.seq+' '+e.entry_type;r.appendChild(tt);
+  lb.appendChild(r);LB.push(r);
+});
+// tool ticker rows
+var tk=$('ticks'),TK=[];
+for(var i=0;i<4;i++){
+  var a=sel('text',{x:580,y:398+i*21,'class':'tick'}),b=sel('text',{x:1152,y:398+i*21,'class':'tick res'});
+  tk.appendChild(a);tk.appendChild(b);TK.push([a,b]);
+}
+var hl=['n-op','n-server','n-s1','n-s2','n-s3','n-meta','n-gate','n-report','n-agent','b-rows','b-agg','b-auth'].map($);
+var SN=[].slice.call(document.querySelectorAll('#pipe .sn'));
+function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
+function stepAt(t){var i=0;for(var k=0;k<STEPS.length;k++)if(t>=STEPS[k].t)i=k;return i}
+function setText(id,s){var e=$(id);if(e.textContent!==s)e.textContent=s}
+var lastStep=-1,dotEls=[];
+function render(t){
+  t=((t%D)+D)%D;
+  var si=stepAt(t),s=STEPS[si],on={};
+  s.on.forEach(function(id){on[id]=1});
+  if(t>=1850&&t<2300)on['n-s1']=on['n-s2']=on['n-s3']=1;
+  hl.forEach(function(e){e.classList.toggle('on',!!on[e.id])});
+  var eon={};
   P.forEach(function(p){
-    if(!edges[p.e]){edges[p.e]=$(p.e);lens[p.e]=edges[p.e].getTotalLength();}
-    var g=document.createElementNS(NS,'g');g.setAttribute('class','pk '+p.k);g.style.display='none';
-    if(p.l){
-      var w=p.l.length*6.4+16, r=document.createElementNS(NS,'rect'), t=document.createElementNS(NS,'text');
-      var ox=p.side?14:-w/2, oy=p.side?-10:-31;
-      r.setAttribute('x',ox);r.setAttribute('y',oy);r.setAttribute('width',w);r.setAttribute('height',20);r.setAttribute('rx',10);
-      t.setAttribute('x',ox+w/2);t.setAttribute('y',oy+14);t.textContent=p.l;
-      g.appendChild(r);g.appendChild(t);
-    }
-    var c=document.createElementNS(NS,'circle');c.setAttribute('r',7);g.appendChild(c);
-    layer.appendChild(g);p.g=g;
+    if(t>=p.a&&t<=p.b){
+      var pt=edges[p.e].getPointAtLength(ease((t-p.a)/(p.b-p.a))*lens[p.e]);
+      p.g.setAttribute('transform','translate('+pt.x.toFixed(1)+','+pt.y.toFixed(1)+')');
+      p.g.style.display='';eon[p.e]=1;
+    }else p.g.style.display='none';
   });
-  var hl=['n-op','n-server','n-s1','n-s2','n-s3','n-meta','n-gate','n-report','n-llm','n-human','b-rows','b-agg','b-auth'].map($);
-  function ease(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2}
-  function stepAt(t){var i=0;for(var k=0;k<STEPS.length;k++)if(t>=STEPS[k].t)i=k;return i}
-  var lastStep=-1, dotEls=[];
-  function render(t){
-    t=((t%D)+D)%D;
-    var si=stepAt(t), s=STEPS[si], on={};
-    s.on.forEach(function(id){on[id]=1});
-    if(t>=2500&&t<3100){on['n-s1']=on['n-s2']=on['n-s3']=1}
-    if(t>=7700&&t<8000){on['n-report']=1}
-    hl.forEach(function(el){el.classList.toggle('on',!!on[el.id])});
-    var eon={};
-    P.forEach(function(p){
-      if(t>=p.a&&t<=p.b){
-        var pt=edges[p.e].getPointAtLength(ease((t-p.a)/(p.b-p.a))*lens[p.e]);
-        p.g.setAttribute('transform','translate('+pt.x.toFixed(1)+','+pt.y.toFixed(1)+')');
-        p.g.style.display='';eon[p.e]=1;
-      }else p.g.style.display='none';
-    });
-    for(var id in edges)edges[id].classList.toggle('on',!!eon[id]);
-    var ns=t>=2500&&t<3800?'READY':t>=3800&&t<5200?'fitting OLS-HC3':t>=13500&&t<14900?'fit per stratum':'local rows';
-    $('s1s').textContent=$('s2s').textContent=$('s3s').textContent=ns;
-    $('gates').textContent=t>=6600&&t<8000?'I² < 0.50':t>=8000&&t<11000?'I² ≥ 0.50':'plain code';
-    $('reps').textContent=t>=7700&&t<8000?'first result':t>=16100?'follow-up':'aggregates';
-    if(si!==lastStep){
-      lastStep=si;
-      $('cap-n').textContent=si+1;$('cap-t').textContent=s.title;$('cap-d').textContent=s.text;
-      dotEls.forEach(function(d,i){d.classList.toggle('on',i===si)});
-    }
+  for(var id in edges)edges[id].classList.toggle('on',!!eon[id]);
+  // site node subtitle
+  var ns='local rows';
+  if(t>=1850&&t<2300)ns='preflight: READY';
+  else if(t>=2300&&t<2900)ns='OLS-HC3 on own rows';
+  else if(t>=9550&&t<9950)ns='refit primary model';
+  else if(t>=16250&&t<16600)ns='fit per stratum';
+  SN.forEach(function(x){if(x.textContent!==ns)x.textContent=ns});
+  // meta
+  var m1='β · 95% CI · Q · I²',m2='';
+  if(t>=17450){m1='SKCM β '+num(sk.beta_meta,3)+' · I² '+i2s(sk.i2);m2='non-SKCM β '+num(nsk.beta_meta,3)+' · I² '+i2s(nsk.i2)}
+  else if(t>=10550){m1='omit one: β '+num(r1.pooled_beta_min,2)+' … '+num(r1.pooled_beta_max,2);m2=r1.omissions_clearing_flag+' of '+r1.omissions_evaluated+' omissions clear flag'}
+  else if(t>=3550){m1='β '+num(r0.beta_meta,3)+' · I² '+i2s(r0.i2);m2='CI ['+num(r0.ci95_low,3)+', '+num(r0.ci95_high,3)+']'}
+  setText('m1',m1);setText('m2',m2);
+  // gate
+  var gs='plain code';
+  if(t>=17800)gs='budget spent';else if(t>=11000&&t<11800)gs='1 follow-up left';else if(t>=4400&&t<5300)gs='I² ≥ 0.50';
+  setText('gs',gs);
+  $('lab-inv').classList.toggle('hot',(t>=4400&&t<5300)||(t>=11000&&t<11800));
+  $('lab-fin').classList.toggle('hot',t>=17800);
+  setText('reps',t>=18800?'rendered · '+L.length+' entries':'from the ledger');
+  setText('opd','contract '+sh((t>=14900?APPR[2]:t>=8100?APPR[1]:APPR[0]).contract_hash));
+  // round meter
+  var r=t<8700?0:t<15400?1:2,doneAt=[3550,10550,17450];
+  for(var k=0;k<3;k++){
+    var done=t>=doneAt[k];
+    $('rs'+k).setAttribute('class','rseg'+(done?' done':k===r?' cur':''));
+    $('rl'+k).setAttribute('class','rlab'+(k===r&&t<18800?' cur':''));
   }
-  window.__duration=D;
-  window.__seek=function(ms){render(ms)};
+  setText('rl1',t>=7050?ACTION_LABEL[PROPS[0].proposal.action]:'follow-up 1');
+  setText('rl2',t>=13880?ACTION_LABEL[PROPS[1].proposal.action]:'follow-up 2');
+  setText('rhead',t>=17800?'Round 2 · budget spent':'Round '+r+' · '+(2-r)+' follow-up'+(2-r===1?'':'s')+' left');
+  // agent ticker
+  var inv=t>=11800?1:t>=5300?0:-1,calls=inv>=0?CALLS[inv]:[],shown=[],nstep=0;
+  if(inv>=0){
+    calls.forEach(function(c){var ci=c.i;if(t>=LT[ci]){nstep=c.call.step;shown.push({c:c,done:t>=LT[ci+1]})}});
+    var live=(inv===0&&t<7300)||(inv===1&&t<14100);
+    setText('tc',(live?'running · ':'done · ')+'step '+nstep+' of max 12');
+    setText('tc2','tool calls '+shown.length+' of 16 · invalid turns 0 of 3');
+  }else{setText('tc','idle');setText('tc2','waits for the gate')}
+  var vis=shown.slice(-4);
+  for(k=0;k<4;k++){
+    var row=TK[k],v=vis[k];
+    if(!v){row[0].textContent='';row[1].textContent='';continue}
+    var isNew=k===vis.length-1&&((inv===0&&t<7300)||(inv===1&&t<14100));
+    var call=v.c.call;
+    row[0].textContent=call.step+'  '+call.tool+'('+argStr(call.arguments)+')';
+    row[0].setAttribute('class','tick'+(isNew?' new':''));
+    var res=v.done?toolResultShort(v.c.res):'…';
+    row[1].textContent=res;
+    row[1].setAttribute('class','tick res'+(res.charAt(0)==='✗'?' bad':(res==='accepted'||res==='allowed')?' good':''));
+  }
+  // ledger strip
+  var cnt=0;
+  for(k=0;k<L.length;k++){
+    var shownB=t>=LT[k];if(shownB)cnt=k+1;
+    LB[k].setAttribute('class','lb '+(shownB?kind(L[k].entry_type):'off'));
+  }
+  if(cnt)LB[cnt-1].setAttribute('class','lb last '+kind(L[cnt-1].entry_type));
+  setText('lcount',cnt+' / '+L.length);
+  if(si!==lastStep){
+    lastStep=si;
+    $('cap-n').textContent=s.n;$('cap-t').textContent=s.title;$('cap-d').textContent=' '+s.text;
+    dotEls.forEach(function(d,i){d.classList.toggle('on',i===si)});
+  }
+}
+window.__duration=D;
+window.__seek=function(ms){render(ms)};
 
-  var capture=/[?&]capture=1/.test(location.search);
-  if(capture){
-    document.documentElement.setAttribute('data-theme','light');
-    var root=document.createElement('div');root.id='capture-root';
-    root.appendChild($('diagram'));document.body.appendChild(root);
-    document.body.classList.add('capture');
-    render(0);window.__ready=true;return;
-  }
+var capture=/[?&]capture=1/.test(location.search);
+if(capture){
+  document.documentElement.setAttribute('data-theme','light');
+  var root=document.createElement('div');root.id='capture-root';
+  root.appendChild($('diagram'));document.body.appendChild(root);
+  document.body.classList.add('capture');
+  render(0);window.__ready=true;return;
+}
 
-  // step dots + play/pause
-  var dots=$('dots');
-  STEPS.forEach(function(s,i){
-    var b=document.createElement('button');b.type='button';b.setAttribute('aria-label','Step '+(i+1)+': '+s.title);b.title=s.title;
-    b.addEventListener('click',function(){jump(i)});dots.appendChild(b);dotEls.push(b);
-  });
-  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var playing=!reduce, t0=performance.now(), cur=0, btn=$('play');
-  function setBtn(){btn.textContent=playing?'Pause':'Play';btn.setAttribute('aria-pressed',playing?'true':'false')}
-  function frame(now){
-    if(playing){cur=(now-t0)%D;render(cur);}
-    requestAnimationFrame(frame);
-  }
-  function jump(i){
-    var s=STEPS[i], end=(STEPS[i+1]?STEPS[i+1].t:D);
-    cur=playing?s.t:Math.min(end-100,s.t+(end-s.t)*0.62);
-    t0=performance.now()-cur;lastStep=-1;render(cur);
-  }
-  btn.addEventListener('click',function(){playing=!playing;t0=performance.now()-cur;setBtn()});
-  document.querySelectorAll('[data-step]').forEach(function(b){
-    b.addEventListener('click',function(){jump(+b.getAttribute('data-step'));$('diagram').scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'})});
-  });
-  setBtn();
-  if(reduce){cur=4000;render(cur);}else render(0);
+var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var dots=$('dots');
+STEPS.forEach(function(s,i){
+  var b=document.createElement('button');b.type='button';b.setAttribute('aria-label','Step '+(i+1)+': '+s.title);b.title=s.n+' · '+s.title;
+  if(i>0&&STEPS[i-1].n!==s.n)b.className='r1';
+  b.addEventListener('click',function(){jump(i)});dots.appendChild(b);dotEls.push(b);
+});
+var playing=!reduce,t0=performance.now(),cur=0,btn=$('play');
+function setBtn(){btn.textContent=playing?'Pause':'Play';btn.setAttribute('aria-pressed',playing?'true':'false')}
+function jump(i){
+  var s=STEPS[i],end=(STEPS[i+1]?STEPS[i+1].t:D);
+  cur=playing?s.t:Math.min(end-100,s.t+(end-s.t)*0.7);
+  t0=performance.now()-cur;lastStep=-1;render(cur);
+}
+btn.addEventListener('click',function(){playing=!playing;t0=performance.now()-cur;setBtn()});
+document.querySelectorAll('[data-step]').forEach(function(b){
+  b.addEventListener('click',function(){jump(+b.getAttribute('data-step'));$('diagram').scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'})});
+});
+setBtn();
+if(reduce){cur=6900;render(cur);}else render(0);
+
+/* ================= PLAN-ACT-OBSERVE mini loop ================= */
+var paoCalls=CALLS[1],ring=$('pao-ring'),ringLen=ring.getTotalLength(),PD=paoCalls.length*2400;
+// ring starts at top (plan), passes act on the right (~1/4..), observe on the left (~3/4)
+function paoRender(t){
+  t=((t%PD)+PD)%PD;
+  var ci=Math.floor(t/2400),f=(t%2400)/2400,c=paoCalls[ci];
+  var pt=ring.getPointAtLength(f*ringLen);
+  $('pao-dot').setAttribute('cx',pt.x.toFixed(1));$('pao-dot').setAttribute('cy',pt.y.toFixed(1));
+  var ph=f<.18||f>.92?'plan':f<.55?'act':'obs';
+  $('pn-plan').classList.toggle('on',ph==='plan');$('pn-act').classList.toggle('on',ph==='act');$('pn-obs').classList.toggle('on',ph==='obs');
+  var txt=c.call.tool+'('+argStr(c.call.arguments)+')';
+  if(ph==='obs')txt='→ '+toolResultShort(c.res);
+  setText('pao-call',txt);
+  setText('pao-cnt','step '+c.call.step+'/12 · calls '+(ci+1)+'/16');
+}
+
+/* single rAF loop for hero + mini loop */
+var paoT0=performance.now(),paoVisible=false;
+if('IntersectionObserver' in window){new IntersectionObserver(function(es){paoVisible=es[0].isIntersecting}).observe($('pao'))}else paoVisible=true;
+function frame(now){
+  if(playing){cur=(now-t0)%D;render(cur)}
+  if(!reduce&&paoVisible)paoRender(now-paoT0);
   requestAnimationFrame(frame);
+}
+paoRender(reduce?2400*4+600:0);
+requestAnimationFrame(frame);
 
-  // gate widget
-  var i2=$('i2'), est=3, outs=document.querySelectorAll('#outs .out'), segs=document.querySelectorAll('[data-est]');
-  function gate(){
-    var v=parseFloat(i2.value), o=est<2?'stop':v>=0.5?'investigate':'finish';
-    $('i2v').textContent=v.toFixed(2);
-    outs.forEach(function(el){el.classList.toggle('on',el.getAttribute('data-o')===o)});
+/* ================= RUN REPLAY ================= */
+var rp={run:'lineage',idx:0,playing:false,timer:null,speed:1,tamper:false};
+var listEl=$('rp-list'),detEl=$('rp-detail'),scrub=$('rp-scrub');
+var TITLES={lineage:['Lineage-enriched split','gdsc-lineage-enriched-v1.ledger.jsonl'],hash:['Hash split','gdsc-hash-split.ledger.jsonl']};
+var verify=[],rows=[];
+function tamperLine(e){
+  return e.raw.replace(/"i2":([0-9.eE-]+)/,function(m,v){return '"i2":'+(Math.abs(parseFloat(v)-0.1)<1e-9?'0.2':'0.1')});
+}
+function computeVerify(entries){
+  var prevStored='sha256:'+new Array(65).join('0');
+  return entries.map(function(e,i){
+    var line=(rp.tamper&&i===3)?tamperLine(e):e.raw;
+    var body=line.replace('"entry_hash":"'+e.entry_hash+'",','');
+    var h='sha256:'+sha256(body);
+    var linkOk=e.prev_hash===prevStored;
+    prevStored=e.entry_hash;
+    return {hashOk:h===e.entry_hash,computed:h,linkOk:linkOk,line:line};
+  });
+}
+function buildList(){
+  var E=RUNS[rp.run];listEl.textContent='';rows=[];
+  var round=-1;
+  E.forEach(function(e,i){
+    var p=e.payload;
+    if(e.entry_type==='STUDY_STARTED'){listEl.appendChild(el('div','rsep','Study started'))}
+    if(e.entry_type==='CONTRACT_APPROVED'&&p.round_index!==round){round=p.round_index;listEl.appendChild(el('div','rsep','Round '+round+(round===0?' · primary':' · '+(ACTION_LABEL[(p.contract&&p.contract.template_id)==='ols_quantitative_loso_v1'?'LEAVE_ONE_SITE_OUT':'STRATIFY_GDSC_LINEAGE']))))}
+    if(e.entry_type==='AGENT_INVOKED'){listEl.appendChild(el('div','rsep','Investigator · scripted policy, not a model'))}
+    var b=el('button','rrow '+kind(e.entry_type));b.type='button';b.setAttribute('role','listitem');
+    b.appendChild(el('span','sq','#'+e.seq));
+    b.appendChild(el('span','kd'));
+    var tx=el('span','tx');tx.appendChild(el('span','ty',e.entry_type));tx.appendChild(el('span','sm',summary(e)));b.appendChild(tx);
+    var vf=el('span','vf','✓');b.appendChild(vf);
+    b.addEventListener('click',function(){stopReplay();go(i)});
+    listEl.appendChild(b);rows.push({b:b,vf:vf});
+  });
+}
+function kvRow(dl,k,v,mono){dl.appendChild(el('dt','',k));var d=el('dd');var s=el(mono?'span':'span',mono?'mono':'',v);d.appendChild(s);dl.appendChild(d)}
+function abbr(v,depth){
+  if(typeof v==='string')return v.length>64?v.slice(0,61)+'…':v;
+  if(Array.isArray(v)){if(depth>2)return '[… '+v.length+' items]';var a=v.slice(0,3).map(function(x){return abbr(x,depth+1)});if(v.length>3)a.push('… +'+(v.length-3)+' more');return a}
+  if(v&&typeof v==='object'){if(depth>2)return '{…}';var o={};Object.keys(v).forEach(function(k){o[k]=abbr(v[k],depth+1)});return o}
+  return v;
+}
+function aggTable(s){
+  var t=el('table','agg'),h=el('tr');['','β','95% CI','Q (df)','I²','sites'].forEach(function(x){h.appendChild(el('th','',x))});
+  var th=el('thead');th.appendChild(h);t.appendChild(th);var tb=el('tbody');
+  function row(name,n){var r=el('tr');[name,num(n.beta_meta,4),'['+num(n.ci95_low,4)+', '+num(n.ci95_high,4)+']',num(n.q,3)+' ('+n.q_degrees_freedom+')',i2s(n.i2),n.estimated_sites+' / '+n.expected_sites].forEach(function(x){r.appendChild(el('td','',x))});tb.appendChild(r)}
+  if(s.network)row('network',s.network);
+  (s.strata||[]).forEach(function(x){row(x.stratum_id,x)});
+  t.appendChild(tb);return t;
+}
+function renderDetail(i){
+  var E=RUNS[rp.run],e=E[i],p=e.payload,v=verify[i];
+  detEl.textContent='';
+  var dh=el('div','dh');dh.appendChild(el('span','seqn','#'+e.seq));dh.appendChild(el('span','ttl',e.entry_type));
+  if(p.policy_kind)dh.appendChild(el('span','chip inv',p.policy_kind));
+  if(p.approval_mode)dh.appendChild(el('span','chip hum',p.approval_mode));
+  dh.appendChild(el('span','chip',e.recorded_at));
+  detEl.appendChild(dh);
+  var t=e.entry_type,dl=el('dl','kvg');
+  if(t==='GATE_DECISION'){
+    var cls=p.decision==='INVESTIGATE'?'inv':p.decision==='FINISH_COMPATIBLE'?'fin':'stp';
+    detEl.appendChild(el('div','big '+cls,p.decision));
+    detEl.appendChild(el('p','dsum',p.reason));
+    kvRow(dl,'after round',String(p.round_index));kvRow(dl,'evidence fields',p.evidence_fields.join(', '),1);kvRow(dl,'parent result',p.parent_result_hash,1);
+    detEl.appendChild(dl);
+    if(rp.run==='hash'&&p.decision==='FINISH_COMPATIBLE')detEl.appendChild(el('p','dsum','The sites agree, so the investigator is never invoked: no AGENT_* entries follow, and no second query is authorised.'));
+  }else if(t==='RESULT_RELEASED'){
+    var s=p.aggregate_summary;
+    detEl.appendChild(el('p','dsum','Round '+p.round_index+' · '+s.action+' · '+s.status));
+    detEl.appendChild(el('div','lbl','Released aggregate (what the ledger keeps)'));
+    if(s.network||(s.strata&&s.strata.length))detEl.appendChild(aggTable(s));
+    if(s.loso){var l=s.loso;detEl.appendChild(el('div','lbl','Leave-one-site-out, identity-free'));kvRow(dl,'pooled β, one site omitted',num(l.pooled_beta_min,4)+' to '+num(l.pooled_beta_max,4));kvRow(dl,'I² over omissions',i2s(l.i2_min)+' to '+i2s(l.i2_max));kvRow(dl,'omissions clearing the flag',l.omissions_clearing_flag+' of '+l.omissions_evaluated)}
+    kvRow(dl,'result hash',p.result_hash,1);kvRow(dl,'result type',p.result_type,1);kvRow(dl,'run id',p.run_id,1);
+    detEl.appendChild(dl);
+  }else if(t==='AGENT_TOOL_CALL'){
+    detEl.appendChild(el('p','dsum','Step '+p.step+': call '+p.tool));
+    detEl.appendChild(el('div','lbl','Arguments'+(p.tool==='submit_proposal'?' (a full FollowUpProposal)':'')));
+    detEl.appendChild(el('pre','json',JSON.stringify(abbr(p.arguments,0),null,2)));
+  }else if(t==='AGENT_TOOL_RESULT'){
+    detEl.appendChild(el('p','dsum','Step '+p.step+': '+p.tool+' → '+toolResultShort(p)));
+    detEl.appendChild(el('div','lbl','Output, abbreviated (full text below). Computed locally from aggregates only.'));
+    detEl.appendChild(el('pre','json',JSON.stringify(abbr(p.output,0),null,2)));
+  }else if(t==='AGENT_PROPOSAL'){
+    var pr=p.proposal;
+    detEl.appendChild(el('div','big inv',pr.action));
+    var q=el('div','quote');q.appendChild(el('small','','Rationale · written by the scripted policy, not a model'));q.appendChild(document.createTextNode(pr.rationale));detEl.appendChild(q);
+    kvRow(dl,'disclosure cost',pr.disclosure_cost);kvRow(dl,'tests',pr.expected_interpretive_value);kvRow(dl,'stop condition',pr.stop_condition);
+    kvRow(dl,'for round',String(pr.round_index));kvRow(dl,'parent result',pr.parent_result_hash,1);kvRow(dl,'proposal hash',p.proposal_hash,1);
+    kvRow(dl,'loop',p.steps+' steps · '+p.tool_calls+' tool calls · '+p.invalid_turns+' invalid turns · protocol '+p.protocol_used);
+    detEl.appendChild(dl);
+    detEl.appendChild(el('p','dsum','A proposal authorises nothing. The next entry is the approval of the one contract compiled from it.'));
+  }else if(t==='CONTRACT_APPROVED'){
+    var c=p.contract;
+    detEl.appendChild(el('p','dsum','Round '+p.round_index+' contract approved by '+p.approver+' ('+p.approval_mode+': no human was asked in this demo).'));
+    kvRow(dl,'contract digest',p.contract_hash,1);kvRow(dl,'template',c.template_id,1);kvRow(dl,'covariates',c.covariate_ids.join(', '),1);
+    if(c.strata.length)kvRow(dl,'strata',c.strata.join(', '),1);
+    kvRow(dl,'parent result',c.parent_result_hash||'none (primary)',!!c.parent_result_hash);kvRow(dl,'proposal',c.proposal_hash||'none (primary)',!!c.proposal_hash);
+    kvRow(dl,'budget',c.max_association_rounds+' rounds (primary + '+(c.max_association_rounds-1)+')');kvRow(dl,'expires',p.expires_at,1);
+    detEl.appendChild(dl);
+  }else if(t==='STUDY_STARTED'){
+    detEl.appendChild(el('p','dsum','Run settings, recorded before anything else.'));
+    kvRow(dl,'backend',p.backend,1);kvRow(dl,'investigator',p.investigator+' · '+p.policy_label,1);kvRow(dl,'approval',p.approver_mode,1);
+    kvRow(dl,'tool protocol',p.tool_protocol+(p.protocol_fallback?' (fallback enabled)':''),1);
+    kvRow(dl,'loop caps',p.loop_limits.max_steps+' steps · '+p.loop_limits.max_tool_calls+' tool calls · '+p.loop_limits.max_invalid_turns+' invalid turns');
+    kvRow(dl,'budget',p.max_association_rounds+' rounds');kvRow(dl,'data',p.data_mode+' · GDSC '+p.gdsc_release+' · '+p.snapshot_set,1);kvRow(dl,'primary contract',p.primary_contract_hash,1);
+    detEl.appendChild(dl);
+  }else if(t==='STUDY_FINISHED'){
+    detEl.appendChild(el('div','big '+(p.reason==='FINISH_COMPATIBLE'?'fin':'stp'),p.reason));
+    kvRow(dl,'rounds run',String(p.rounds_run));kvRow(dl,'final result',p.final_result_hash,1);detEl.appendChild(dl);
+  }else if(t==='AGENT_INVOKED'){
+    detEl.appendChild(el('p','dsum','The operator hands the investigator aggregate-only evidence for round '+p.round_index+'.'));
+    kvRow(dl,'budget remaining',String(p.budget_remaining));kvRow(dl,'evidence hash',p.evidence_hash,1);kvRow(dl,'parent result',p.parent_result_hash,1);kvRow(dl,'policy',p.policy_label,1);
+    detEl.appendChild(dl);
+  }else{
+    kvRow(dl,'round',String(p.round_index));kvRow(dl,'template',p.template_id,1);kvRow(dl,'contract',p.contract_hash,1);kvRow(dl,'backend',p.backend,1);detEl.appendChild(dl);
   }
-  i2.addEventListener('input',gate);
-  segs.forEach(function(b){b.addEventListener('click',function(){
-    est=+b.getAttribute('data-est');segs.forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});gate();
-  })});
-  document.querySelectorAll('[data-preset]').forEach(function(b){b.addEventListener('click',function(){
-    i2.value=b.getAttribute('data-preset');est=3;segs.forEach(function(x){x.setAttribute('aria-pressed',x.getAttribute('data-est')==='3'?'true':'false')});gate();
-  })});
-  gate();
+  // hash chain
+  var cb=el('div','chainbox');cb.appendChild(el('div','lbl','Hash chain'));
+  var lk=el('div','lk');
+  lk.appendChild(el('span','','prev_hash'));lk.appendChild(el('span','mono',e.prev_hash));
+  lk.appendChild(el('span','','entry_hash'));lk.appendChild(el('span','mono',e.entry_hash));
+  if(!v.hashOk){lk.appendChild(el('span','','recomputed'));lk.appendChild(el('span','mono bad',v.computed))}
+  cb.appendChild(lk);
+  var vl=el('div','vline');
+  vl.appendChild(el('span',v.linkOk?'okk':'bad',v.linkOk?(i===0?'✓ starts from the zero genesis hash':'✓ prev_hash equals entry #'+(i-1)+'\'s entry_hash'):'✗ prev_hash does not match entry #'+(i-1)));
+  vl.appendChild(el('span',v.hashOk?'okk':'bad',v.hashOk?'✓ SHA-256 recomputed in your browser':'✗ content no longer matches entry_hash'));
+  cb.appendChild(vl);detEl.appendChild(cb);
+  var dt=el('details','raw');dt.appendChild(el('summary','','Exact ledger line'+(rp.tamper&&i===3?' (edited copy)':'')));dt.appendChild(el('pre','json',v.line));detEl.appendChild(dt);
+}
+function renderState(i){
+  var E=RUNS[rp.run],stEl=$('rp-state');stEl.textContent='';
+  var round=0,released=-1,gate=null,inv=null,calls=0,steps=0,budget=null;
+  for(var k=0;k<=i;k++){var e=E[k],p=e.payload;
+    if(e.entry_type==='CONTRACT_APPROVED')round=p.round_index;
+    if(e.entry_type==='RESULT_RELEASED')released=p.round_index;
+    if(e.entry_type==='GATE_DECISION')gate=p.decision;
+    if(e.entry_type==='AGENT_INVOKED'){inv=p.round_index;calls=0;steps=0;budget=p.budget_remaining}
+    if(e.entry_type==='AGENT_TOOL_CALL'){calls++;steps=p.step}
+    if(e.entry_type==='STUDY_STARTED')budget=p.max_association_rounds-1;
+  }
+  var a=el('span');a.appendChild(el('span','','Round '));a.appendChild(el('b','',String(round)));
+  var pips=el('span','pips');for(k=0;k<3;k++){pips.appendChild(el('i',k<=released?'done':k===round?'cur':''))}a.appendChild(pips);stEl.appendChild(a);
+  var g=el('span');g.appendChild(document.createTextNode('Latest gate '));g.appendChild(el('span','chip '+(gate==='INVESTIGATE'?'inv':gate==='FINISH_COMPATIBLE'?'fin':gate?'stp':''),gate||'not yet'));stEl.appendChild(g);
+  var ag=el('span');
+  if(inv===null){ag.appendChild(document.createTextNode(rp.run==='hash'?'Investigator: never invoked in this run':'Investigator: not invoked yet'))}
+  else{ag.appendChild(document.createTextNode('Investigator (scripted) · step '));ag.appendChild(el('b','',steps+' / 12'));ag.appendChild(document.createTextNode(' · tool calls '));ag.appendChild(el('b','',calls+' / 16'))}
+  stEl.appendChild(ag);
+  var bu=el('span');bu.appendChild(document.createTextNode('Follow-up budget left '));bu.appendChild(el('b','',budget==null?'—':String(Math.max(0,2-Math.max(0,released)))));
+  stEl.appendChild(bu);
+}
+function go(i){
+  var E=RUNS[rp.run];i=Math.max(0,Math.min(E.length-1,i));rp.idx=i;
+  scrub.value=i;$('rp-pos').textContent=(i+1)+' / '+E.length;
+  rows.forEach(function(r,k){
+    r.b.classList.toggle('cur',k===i);r.b.classList.toggle('future',k>i);
+    if(k===i)r.b.setAttribute('aria-current','true');else r.b.removeAttribute('aria-current');
+    var v=verify[k],ok=v.hashOk&&v.linkOk;r.vf.textContent=ok?'✓':'✗';r.vf.className='vf'+(ok?'':' bad');
+    r.vf.title=ok?'hash and link verified':'verification failed';
+  });
+  var cr=rows[i].b,top=cr.offsetTop,lh=listEl.clientHeight;
+  if(top<listEl.scrollTop+30||top+cr.offsetHeight>listEl.scrollTop+lh-30)listEl.scrollTop=Math.max(0,top-lh/2);
+  renderDetail(i);renderState(i);
+  $('rp-prev').disabled=i===0;$('rp-next').disabled=i===E.length-1;
+}
+function delayFor(i){var t=RUNS[rp.run][i].entry_type;return (t.indexOf('AGENT_TOOL')===0?650:1300)/rp.speed}
+function tickReplay(){
+  var E=RUNS[rp.run];
+  if(rp.idx>=E.length-1){stopReplay();return}
+  go(rp.idx+1);rp.timer=setTimeout(tickReplay,delayFor(rp.idx));
+}
+function startReplay(){
+  if(rp.idx>=RUNS[rp.run].length-1)go(0);
+  rp.playing=true;$('rp-play').textContent='Pause';$('rp-play').setAttribute('aria-pressed','true');
+  rp.timer=setTimeout(tickReplay,delayFor(rp.idx));
+}
+function stopReplay(){rp.playing=false;clearTimeout(rp.timer);$('rp-play').textContent='Play';$('rp-play').setAttribute('aria-pressed','false')}
+function setRun(run){
+  stopReplay();rp.run=run;var E=RUNS[run];
+  document.querySelectorAll('[data-run]').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-run')===run?'true':'false')});
+  var last=E[E.length-1].payload,rounds=last.rounds_run;
+  $('rp-h').firstChild.textContent=TITLES[run][0];
+  $('rp-hs').textContent=E.length+' entries · '+rounds+' round'+(rounds===1?'':'s')+' · ended '+last.reason+' · '+TITLES[run][1];
+  scrub.max=E.length-1;verify=computeVerify(E);buildList();listEl.scrollTop=0;go(0);
+}
+$('rp-play').addEventListener('click',function(){rp.playing?stopReplay():startReplay()});
+$('rp-prev').addEventListener('click',function(){stopReplay();go(rp.idx-1)});
+$('rp-next').addEventListener('click',function(){stopReplay();go(rp.idx+1)});
+scrub.addEventListener('input',function(){stopReplay();go(+scrub.value)});
+$('rp-speed').addEventListener('click',function(){rp.speed=rp.speed===1?2:rp.speed===2?4:1;this.textContent=rp.speed+'×'});
+document.querySelectorAll('[data-run]').forEach(function(b){b.addEventListener('click',function(){setRun(b.getAttribute('data-run'))})});
+$('rp-tamper').addEventListener('click',function(){
+  rp.tamper=!rp.tamper;this.setAttribute('aria-pressed',rp.tamper?'true':'false');this.textContent=rp.tamper?'Undo the edit':'Simulate an edit';
+  $('rp-tamper-t').textContent=rp.tamper?'Entry #3 now fails: its content no longer matches its entry_hash. Recomputing that hash to hide the edit would break #4\'s prev_hash link instead. verify-ledger rejects either.':'Changes I² in entry #3 of this page\'s copy, then re-hashes. Nothing is written anywhere.';
+  verify=computeVerify(RUNS[rp.run]);go(rp.tamper?3:rp.idx);
+});
+setRun('lineage');
+
+/* ================= hash chain (technical) ================= */
+(function(){
+  var hc=$('hchain'),items=[];
+  L.forEach(function(e){var p=e.payload;
+    if(e.entry_type==='CONTRACT_APPROVED')items.push(['c','contract r'+p.round_index,sh(p.contract_hash)]);
+    if(e.entry_type==='RESULT_RELEASED')items.push(['r','result r'+p.round_index,sh(p.result_hash)]);
+    if(e.entry_type==='AGENT_PROPOSAL')items.push(['p','proposal',sh(p.proposal_hash)]);
+  });
+  items.forEach(function(it,i){
+    if(i)hc.appendChild(el('span','ar','→'));
+    var d=el('span','hc '+it[0]);d.appendChild(el('small','',it[1]));d.appendChild(el('span','',it[2]));hc.appendChild(d);
+  });
+})();
+
+/* ================= forest plots ================= */
+function forest(id,rowsF,lo,hi,ticks){
+  var host=$(id),pct=function(x){return ((x-lo)/(hi-lo)*100).toFixed(2)+'%'};
+  rowsF.forEach(function(r){
+    var row=el('div','frow');row.title=r.tip||'';
+    var l=el('div','fl',r.label);if(r.sub)l.appendChild(el('small','',r.sub));row.appendChild(l);
+    var tr=el('div','ftrack');
+    ticks.forEach(function(t){var g=el('i',t===0?'zero':'grid');g.style.left=pct(t);tr.appendChild(g)});
+    if(r.range){var rg=el('i','rng');rg.style.left=pct(r.range[0]);rg.style.width='calc('+pct(r.range[1])+' - '+pct(r.range[0])+')';tr.appendChild(rg)}
+    else{var ci=el('i','ci');ci.style.left=pct(r.ci[0]);ci.style.width='calc('+pct(r.ci[1])+' - '+pct(r.ci[0])+')';tr.appendChild(ci);var pt=el('i','pt');pt.style.left=pct(r.b);tr.appendChild(pt)}
+    row.appendChild(tr);
+    var v=el('div','fv');v.appendChild(el('b','',r.v1));v.appendChild(el('br'));v.appendChild(document.createTextNode(r.v2));
+    row.insertBefore(v,tr);host.appendChild(row);
+  });
+  var ax=el('div','faxis');var tk=el('div','ticks');
+  ticks.forEach(function(t){var s=el('span','',t===0?'0':num(t,0));s.style.left=pct(t);tk.appendChild(s)});
+  ax.appendChild(tk);ax.appendChild(el('div','fcap','β, ln µM · dot = pooled β, bar = 95% CI · dashed line = no effect'));host.appendChild(ax);
+}
+var H=RUNS.hash,hn=byType(H,'RESULT_RELEASED')[0].payload.aggregate_summary.network;
+function ciRow(label,sub,n){return {label:label,sub:sub,b:n.beta_meta,ci:[n.ci95_low,n.ci95_high],v1:'β '+num(n.beta_meta,4),v2:'I² '+i2s(n.i2),tip:label+': β '+num(n.beta_meta,4)+', 95% CI ['+num(n.ci95_low,4)+', '+num(n.ci95_high,4)+'], I² '+i2s(n.i2)}}
+// The live SuperGrid primary is quoted from docs/results.md; it equals the offline hash-split values.
+forest('f-live',[{label:'Pooled, 3 SuperNodes',sub:'95% CI [−2.8232, −1.8063]',b:-2.3148,ci:[-2.8232,-1.8063],v1:'β −2.3148',v2:'I² 0'}],-4.5,0.5,[-4,-3,-2,-1,0]);
+forest('f-off',[
+  ciRow('Hash split · primary','sites agree → FINISH_COMPATIBLE',hn),
+  ciRow('Lineage split · round 0','primary → INVESTIGATE',r0),
+  {label:'Round 1 · leave-one-site-out',sub:'range over omissions, not a CI',range:[r1.pooled_beta_min,r1.pooled_beta_max],v1:num(r1.pooled_beta_min,3)+' … '+num(r1.pooled_beta_max,3),v2:r1.omissions_clearing_flag+' / '+r1.omissions_evaluated+' clear flag',tip:'Pooled β with one site omitted ranges '+num(r1.pooled_beta_min,4)+' to '+num(r1.pooled_beta_max,4)},
+  ciRow('Round 2 · SKCM','lineage stratum',sk),
+  ciRow('Round 2 · non-SKCM','lineage stratum → BUDGET_EXHAUSTED',nsk)
+],-4.5,0.5,[-4,-3,-2,-1,0]);
+
+/* ================= gate widget ================= */
+var i2=$('i2'),est=3,rr=1,outs=document.querySelectorAll('#outs .out');
+function gate(){
+  var v=parseFloat(i2.value),o;
+  if(rr===1)o=est<2?'stop':v>=0.5?'investigate':'finish';
+  else o=est<2?'stop':(3-rr)===0?'budget':'investigate';
+  $('i2v').textContent=v.toFixed(3);
+  i2.disabled=rr>1;$('i2track').classList.toggle('dim',rr>1);
+  $('gnote').textContent=rr===1?'Primary gate: fewer than two estimates stops; I² ≥ 0.50 investigates; otherwise finish.':'Continuation gate: I² is not consulted. Follow-ups left: '+(3-rr)+'. '+((3-rr)?'The investigator may re-plan, or propose STOP_NO_FOLLOWUP.':'No further query is authorised.');
+  outs.forEach(function(e){e.classList.toggle('on',e.getAttribute('data-o')===o)});
+}
+function setSeg(attr,val){document.querySelectorAll('['+attr+']').forEach(function(x){x.setAttribute('aria-pressed',x.getAttribute(attr)===String(val)?'true':'false')})}
+i2.addEventListener('input',gate);
+document.querySelectorAll('[data-est]').forEach(function(b){b.addEventListener('click',function(){est=+b.getAttribute('data-est');setSeg('data-est',est);gate()})});
+document.querySelectorAll('[data-rr]').forEach(function(b){b.addEventListener('click',function(){rr=+b.getAttribute('data-rr');setSeg('data-rr',rr);gate()})});
+document.querySelectorAll('[data-preset]').forEach(function(b){b.addEventListener('click',function(){
+  var a=b.getAttribute('data-preset').split(',');rr=+a[0];i2.value=a[1];est=3;setSeg('data-est',3);setSeg('data-rr',rr);gate();
+})});
+gate();
 })();
 </script>
 </body>

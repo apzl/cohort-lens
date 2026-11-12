@@ -206,3 +206,23 @@ def phase1_reference() -> tuple[list[SiteEstimate], MetaEstimate]:
 def phase0_reference() -> tuple[list[SiteEstimate], MetaEstimate]:
     """Backward-compatible name for the synthetic reference calculation."""
     return phase1_reference()
+
+
+def leave_one_site_out(
+    estimates: list[SiteEstimate],
+) -> list[tuple[str, MetaEstimate]]:
+    """Re-pool the estimates once per site with that site's estimate omitted.
+
+    Requires at least three estimates so every omission still pools two.
+    Results are ordered by the omitted site's alias.
+    """
+    if len(estimates) < 3:
+        raise ValueError("leave-one-site-out needs at least three site estimates")
+    aliases = [item.site_alias for item in estimates]
+    if len(set(aliases)) != len(aliases):
+        raise ValueError("site aliases must be unique")
+    ordered = sorted(estimates, key=lambda item: item.site_alias)
+    return [
+        (left_out.site_alias, fixed_effect_meta([item for item in ordered if item is not left_out]))
+        for left_out in ordered
+    ]

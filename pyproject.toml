@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cohortlens-dev"
-version = "0.1.0"
-description = "Federated analytics on Flower: hash-bound contracts, site-local OLS-HC3, meta-analysis, and a schema-bounded LLM follow-up loop"
+version = "0.2.0"
+description = "Federated analytics on Flower: hash-bound contracts, site-local OLS-HC3, meta-analysis, and a bounded tool-using LLM investigator with human-approved follow-up rounds"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "apzl" }]

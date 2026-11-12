@@ -1,4 +1,4 @@
-"""Coordinator (ServerApp): preflight, association fan-out, validation and meta-analysis."""
+"""Coordinator (ServerApp): preflight, fan-out, validation, meta-analysis and follow-ups."""
 
 from __future__ import annotations
 
@@ -10,18 +10,29 @@ from flwr.app import ConfigRecord, Context, Message, RecordDict
 from flwr.serverapp import Grid, ServerApp
 from flwr.supercore import log
 
+from cohortlens_shared.catalog import (
+    COORDINATOR_MAX_ASSOCIATION_ROUNDS,
+    LOSO_TEMPLATE,
+    PRIMARY_TEMPLATE,
+    round_budget_violation,
+    verify_followup_binding,
+)
 from cohortlens_shared.schemas import (
+    HETEROGENEITY_THRESHOLD,
     AnalysisContract,
     Approval,
     AssociationReply,
     AssociationRequest,
     AssociationResult,
     FollowUpProposal,
-    Phase2AssociationResult,
+    LeaveOneSiteOutResult,
     PreflightReply,
     PreflightRequest,
+    ReleasedResult,
     ResultEnvelope,
+    SiteOmission,
     SiteState,
+    StratifiedAssociationResult,
     StudyPreflightRequest,
     canonical_json,
     contract_digest,
@@ -30,7 +41,12 @@ from cohortlens_shared.schemas import (
     proposal_digest,
     validate_contract_approval,
 )
-from cohortlens_shared.statistics import SiteEstimate, fixed_effect_meta
+from cohortlens_shared.statistics import (
+    MetaEstimate,
+    SiteEstimate,
+    fixed_effect_meta,
+    leave_one_site_out,
+)
 
 RESULT_FRAME_PREFIX = "COHORTLENS_RESULT_V1 "
 DEFAULT_PHASE1_TOKEN = "DEFAULT_SYNTHETIC_PHASE1"
@@ -77,6 +93,11 @@ class Phase1Config:
             raise ValueError("query_id must match the approved analysis_id")
         if self.node_wait_seconds < 0 or self.reply_timeout_seconds <= 0:
             raise ValueError("timeouts must be positive")
+        violation = round_budget_violation(
+            self.contract, COORDINATOR_MAX_ASSOCIATION_ROUNDS
+        )
+        if violation is not None:
+            raise ValueError(f"coordinator refused the contract: {violation}")
 
 
 def config_from_context(context: Context) -> Phase0Config:
@@ -202,6 +223,23 @@ def _validated_association_reply(
     ):
         raise ValueError("association reply does not match the approved request")
     return reply
+
+
+def _site_estimates(site_results: tuple[AssociationReply, ...]) -> list[SiteEstimate]:
+    """Convert validated ESTIMATED replies into statistics inputs."""
+    return [
+        SiteEstimate(
+            site_alias=reply.site_alias,
+            beta=reply.beta,
+            standard_error=reply.standard_error,
+            n_used=reply.n_used,
+        )
+        for reply in site_results
+        if reply.status == "ESTIMATED"
+        and reply.beta is not None
+        and reply.standard_error is not None
+        and reply.n_used is not None
+    ]
 
 
 def run_preflight(grid: Grid, config: Phase0Config) -> ResultEnvelope:
@@ -416,19 +454,7 @@ def run_phase1(
             )
 
     site_results = tuple(by_site[key] for key in sorted(by_site))
-    estimates = [
-        SiteEstimate(
-            site_alias=reply.site_alias,
-            beta=reply.beta,
-            standard_error=reply.standard_error,
-            n_used=reply.n_used,
-        )
-        for reply in site_results
-        if reply.status == "ESTIMATED"
-        and reply.beta is not None
-        and reply.standard_error is not None
-        and reply.n_used is not None
-    ]
+    estimates = _site_estimates(site_results)
     aggregate = fixed_effect_meta(estimates) if len(estimates) >= 2 else None
     estimated_sites = len(estimates)
     status = (
@@ -455,7 +481,9 @@ def run_phase1(
         q=None if aggregate is None else aggregate.q,
         q_degrees_freedom=None if aggregate is None else aggregate.sites - 1,
         i2=None if aggregate is None else aggregate.i2,
-        heterogeneity_flag=None if aggregate is None else aggregate.i2 >= 0.50,
+        heterogeneity_flag=(
+            None if aggregate is None else aggregate.i2 >= HETEROGENEITY_THRESHOLD
+        ),
         status=status,
         phenotype_unit=config.contract.phenotype_unit,
         data_provenance=(
@@ -473,24 +501,16 @@ def run_phase1(
     return result
 
 
-def run_phase2(
+def run_stratified(
     grid: Grid, config: Phase1Config, proposal: FollowUpProposal
-) -> Phase2AssociationResult:
-    """Run exactly two predeclared local context strata after explicit approval."""
+) -> StratifiedAssociationResult:
+    """Run the two predeclared strata of an approved stratification follow-up."""
+    verify_followup_binding(config.contract, proposal)
     if config.contract.strata not in {
         ("context_0", "context_1"),
         ("non_skcm", "skcm"),
     }:
         raise ValueError("A follow-up requires an approved pair of fixed strata")
-    if config.contract.parent_result_hash != proposal.parent_result_hash:
-        raise ValueError("approved contract is not bound to the proposal parent result")
-    expected_action = (
-        "STRATIFY_GDSC_LINEAGE"
-        if config.contract.strata == ("non_skcm", "skcm")
-        else "STRATIFY_SYNTHETIC_CONTEXT"
-    )
-    if proposal.action != expected_action:
-        raise ValueError("only an approved stratification proposal can start a second run")
     results = tuple(
         run_phase1(grid, config, stratum_id=stratum, emit=False)
         for stratum in config.contract.strata
@@ -500,13 +520,15 @@ def run_phase2(
         else "PARTIAL" if any(item.status == "PARTIAL" for item in results)
         else "COMPLETE"
     )
-    result = Phase2AssociationResult(
+    assert config.contract.parent_result_hash is not None
+    result = StratifiedAssociationResult(
         study_id=config.contract.study_id,
         analysis_id=config.contract.analysis_id,
         query_id=config.query_id,
         contract_hash=contract_digest(config.contract),
         parent_result_hash=config.contract.parent_result_hash,
         proposal_hash=proposal_digest(proposal),
+        round_index=config.contract.round_index,
         strata_results=results,
         status=status,
     )
@@ -514,28 +536,88 @@ def run_phase2(
     return result
 
 
+run_phase2 = run_stratified
+
+
+def _omission(alias: str, aggregate: MetaEstimate) -> SiteOmission:
+    return SiteOmission(
+        omitted_site_alias=alias,
+        estimated_sites=aggregate.sites,
+        beta_meta=aggregate.beta,
+        standard_error_meta=aggregate.standard_error,
+        ci95_low=aggregate.ci95_low,
+        ci95_high=aggregate.ci95_high,
+        q=aggregate.q,
+        q_degrees_freedom=aggregate.sites - 1,
+        i2=aggregate.i2,
+        heterogeneity_flag=aggregate.i2 >= HETEROGENEITY_THRESHOLD,
+    )
+
+
+def run_leave_one_site_out(
+    grid: Grid, config: Phase1Config, proposal: FollowUpProposal
+) -> LeaveOneSiteOutResult:
+    """Re-run the primary model under the LOSO template and release omissions."""
+    verify_followup_binding(config.contract, proposal)
+    if config.contract.template_id != LOSO_TEMPLATE or config.contract.strata:
+        raise ValueError("leave-one-site-out requires the unstratified LOSO template")
+    full = run_phase1(grid, config, emit=False)
+    estimates = _site_estimates(full.site_results)
+    omissions = (
+        tuple(_omission(alias, meta) for alias, meta in leave_one_site_out(estimates))
+        if len(estimates) >= 3
+        else ()
+    )
+    assert config.contract.parent_result_hash is not None
+    result = LeaveOneSiteOutResult(
+        study_id=config.contract.study_id,
+        analysis_id=config.contract.analysis_id,
+        query_id=config.query_id,
+        contract_hash=contract_digest(config.contract),
+        parent_result_hash=config.contract.parent_result_hash,
+        proposal_hash=proposal_digest(proposal),
+        round_index=config.contract.round_index,
+        full_result=full,
+        omissions=omissions,
+        status="INSUFFICIENT" if len(estimates) < 3 else full.status,
+    )
+    print(f"{RESULT_FRAME_PREFIX}{canonical_json(result)}", flush=True)
+    return result
+
+
+def execute_contract(
+    grid: Grid, config: Phase1Config, proposal: FollowUpProposal | None
+) -> ReleasedResult:
+    """Dispatch an approved contract to the only runner its round and template allow."""
+    config.validate()
+    if config.contract.round_index == 0:
+        if proposal is not None or config.contract.template_id != PRIMARY_TEMPLATE:
+            raise ValueError("a primary round takes the primary template and no proposal")
+        return run_phase1(grid, config)
+    if proposal is None:
+        raise ValueError("A follow-up requires the exact operator-approved followup proposal")
+    if config.contract.template_id == LOSO_TEMPLATE:
+        return run_leave_one_site_out(grid, config, proposal)
+    return run_stratified(grid, config, proposal)
+
+
+def proposal_from_context(context: Context) -> FollowUpProposal | None:
+    """Read the reviewed proposal of a follow-up run, if one was supplied."""
+    payload = context.run_config.get("followup-proposal-json")
+    if not isinstance(payload, str) or payload.startswith(REQUIRED_INPUT_PREFIX):
+        return None
+    return FollowUpProposal.model_validate_json(payload)
+
+
 @app.main()
 def main(grid: Grid, context: Context) -> None:
-    """Execute the approved primary or bounded follow-up association workflow."""
+    """Execute the approved primary or follow-up round of an investigation chain."""
     config = phase1_config_from_context(context)
-    proposal_payload = context.run_config.get("followup-proposal-json")
-    if config.contract.strata:
-        if not isinstance(proposal_payload, str) or proposal_payload.startswith(REQUIRED_INPUT_PREFIX):
-            raise ValueError("A follow-up requires the exact operator-approved followup proposal")
-        proposal = FollowUpProposal.model_validate_json(proposal_payload)
-        result = run_phase2(grid, config, proposal)
-        log(
-            INFO,
-            "CohortLens follow-up finished with %s strata (%s)",
-            len(result.strata_results),
-            result.status,
-        )
-    else:
-        result = run_phase1(grid, config)
-        log(
-            INFO,
-            "CohortLens primary run finished with %s/%s estimates (%s)",
-            result.estimated_sites,
-            result.expected_sites,
-            result.status,
-        )
+    result = execute_contract(grid, config, proposal_from_context(context))
+    log(
+        INFO,
+        "CohortLens round %s (%s) finished: %s",
+        config.contract.round_index,
+        result.result_type,
+        result.status,
+    )

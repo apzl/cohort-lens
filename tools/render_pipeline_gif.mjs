@@ -1,4 +1,6 @@
-// Render the hero pipeline animation in docs/index.html to docs/pipeline.gif.
+// Render the hero loop animation in docs/index.html to docs/pipeline.gif.
+// The animation replays docs/sample-run/gdsc-lineage-enriched-v1.ledger.jsonl, which the page embeds
+// inline; regenerate the GIF after changing that ledger or the diagram.
 //
 // The page exposes a seekable timeline in capture mode (docs/index.html?capture=1):
 //   window.__duration  loop length in ms

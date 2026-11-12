@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cohortlens-agent"
-version = "0.1.0"
-description = "Bounded Endeavor agent for aggregate-only GDSC investigation and reporting"
+version = "0.2.0"
+description = "Bounded tool-using Endeavor investigator and reporter over aggregate-only CohortLens evidence"
 license = { file = "LICENSE" }
 requires-python = ">=3.11,<4.0"
 dependencies = ["flwr>=1.37.0,<1.38.0", "openai==2.54.0", "pydantic==2.13.5"]
@@ -20,8 +20,14 @@ flwr-version-target = "1.37.0"
 fab-include = ["cohortlens_agent/**/*.py", "cohortlens_shared/**/*.py", "LICENSE"]
 
 [tool.flwr.app.config.agent]
-mode = "planner"
-input = '''{"study_id":"phase1-demo","question":"Is the fictional variant associated with the synthetic biomarker across all three sites?"}'''
+mode = "investigator"
+input = "REQUIRED_OPERATOR_INVESTIGATION_EVIDENCE_JSON"
+tool-protocol = "json"
+protocol-fallback = true
+max-steps = 12
+max-tool-calls = 16
+max-invalid-turns = 3
+max-output-tokens = 2000
 
 [tool.flwr.app.components]
 agentapp = "cohortlens_agent.agent_app:app"

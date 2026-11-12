@@ -35,9 +35,21 @@ flowchart LR
 
 If the released site estimates agree (`I² < 0.50`), the study finishes. If
 they disagree and there is enough evidence, a separate CohortLens AgentApp may
-propose the single predeclared follow-up: repeat the analysis separately for
-SKCM and non-SKCM cancer lineages. That proposal is not authorization; an
-operator must approve a new contract before another analytics run.
+propose one follow-up from a closed catalog, and after each approved follow-up
+it may re-plan until it stops or the query budget is spent:
+
+- **leave-one-site-out sensitivity** (`ols_quantitative_loso_v1`): sites
+  return the primary summary again and the ServerApp also releases the pooled
+  estimate and I² with each site omitted;
+- **lineage stratification** (`ols_quantitative_lineage_stratified_v1`):
+  sites return one summary for SKCM and one for non-SKCM lineages.
+
+A proposal is not authorization. Each follow-up runs only under a new contract
+that binds the parent result hash, the reviewed proposal hash, its round index
+and the chain's budget, with a fresh operator approval. The ServerApp checks
+the contract against the proposal, and each ClientApp independently checks the
+template, covariates, strata, round and budget against its own allowlist
+(at most three rounds in a chain) before touching data.
 
 ## Data and deployment
 

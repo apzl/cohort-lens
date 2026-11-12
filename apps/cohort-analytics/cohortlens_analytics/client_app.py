@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -89,88 +90,116 @@ def dataset_from_context(
     return design, outcome, snapshot_alias.strip()
 
 
-def _compatibility_status(
-    contract: AnalysisContract,
-    approval: Approval,
-    design,
-    outcome,
-) -> tuple[str, str | None]:
-    try:
-        validate_contract_approval(contract, approval)
-    except ValueError:
-        return "NOT_AUTHORIZED", "APPROVAL_INVALID"
+@dataclass(frozen=True)
+class AllowedAnalysis:
+    """One analysis shape this site agrees to compute."""
 
-    synthetic = contract.variant.reference_build == "SYNTHETIC_V1"
-    gdsc = contract.variant.reference_build == "CMP_DRIVER_SUMMARY_PINNED"
-    if (synthetic and approval.scope != "SYNTHETIC_DEMO") or (
-        gdsc and approval.scope != "PUBLIC_GDSC_EMULATED_FEDERATION"
-    ):
-        return "NOT_AUTHORIZED", "APPROVAL_SCOPE_MISMATCH"
-    supported_variant = (
-        contract.variant.reference_build == "SYNTHETIC_V1"
-        and contract.variant.key == "demo:1:1000:A:G"
-        and contract.variant.effect_allele == "G"
-        and contract.variant.dosage == "effect_allele_count"
-    ) or (
-        gdsc
-        and contract.variant.key == "BRAF:p.V600E"
-        and contract.variant.effect_allele == "PRESENT"
-        and contract.variant.dosage == "binary_presence"
-    )
-    if not supported_variant:
+    template_id: str
+    covariate_ids: tuple[str, ...]
+    strata: tuple[str, ...]
+    followup: bool
+
+
+@dataclass(frozen=True)
+class SitePolicy:
+    """Site-owned definitions for one data mode; independent of the catalog."""
+
+    scope: str
+    variant: tuple[str, str, str]
+    phenotype: tuple[str, str]
+    cohort_rule_id: str
+    statistical_policy_id: str
+    privacy_policy_id: str
+    analyses: tuple[AllowedAnalysis, ...]
+
+
+# Closed, site-local allowlist. It deliberately does not import the shared
+# action catalog: a changed catalog must not silently widen what a site runs.
+SITE_MAX_ASSOCIATION_ROUNDS = 3
+_SYNTHETIC_PRIMARY = ("age_z_v1", "sex_code_v1", "context_v1")
+_GDSC_PRIMARY = ("TCGA_SKCM_VS_OTHER_V1",)
+SITE_POLICIES: dict[str, SitePolicy] = {
+    "SYNTHETIC_V1": SitePolicy(
+        scope="SYNTHETIC_DEMO",
+        variant=("demo:1:1000:A:G", "G", "effect_allele_count"),
+        phenotype=("biomarker_y_v1", "demo_unit"),
+        cohort_rule_id="all_synthetic_adults_v1",
+        statistical_policy_id="ols_hc3_fixed_effect_v1",
+        privacy_policy_id="synthetic_release_v1",
+        analyses=(
+            AllowedAnalysis("ols_quantitative_v1", _SYNTHETIC_PRIMARY, (), False),
+            AllowedAnalysis("ols_quantitative_loso_v1", _SYNTHETIC_PRIMARY, (), True),
+            AllowedAnalysis(
+                "ols_quantitative_context_stratified_v1",
+                ("age_z_v1", "sex_code_v1"),
+                ("context_0", "context_1"),
+                True,
+            ),
+        ),
+    ),
+    "CMP_DRIVER_SUMMARY_PINNED": SitePolicy(
+        scope="PUBLIC_GDSC_EMULATED_FEDERATION",
+        variant=("BRAF:p.V600E", "PRESENT", "binary_presence"),
+        phenotype=("GDSC2_PLX4720_LN_IC50", "ln_micromolar"),
+        cohort_rule_id="GDSC2_PLX4720_MUTATION_COVERED_V1",
+        statistical_policy_id="OLS_HC3_FIXED_EFFECT_V1",
+        privacy_policy_id="PUBLIC_GDSC_RELEASE_V1",
+        analyses=(
+            AllowedAnalysis("ols_quantitative_v1", _GDSC_PRIMARY, (), False),
+            AllowedAnalysis("ols_quantitative_loso_v1", _GDSC_PRIMARY, (), True),
+            AllowedAnalysis(
+                "ols_quantitative_lineage_stratified_v1",
+                ("INTERCEPT_ONLY_AFTER_STRATIFICATION",),
+                ("non_skcm", "skcm"),
+                True,
+            ),
+        ),
+    ),
+}
+
+Status = tuple[str, str | None]
+
+
+def _definition_status(contract: AnalysisContract, policy: SitePolicy) -> Status | None:
+    variant = (contract.variant.key, contract.variant.effect_allele, contract.variant.dosage)
+    if variant != policy.variant:
         return "INCOMPATIBLE_VARIANT", "VARIANT_DEFINITION_MISMATCH"
-    supported_phenotype = (
-        synthetic
-        and contract.phenotype_id == "biomarker_y_v1"
-        and contract.phenotype_unit == "demo_unit"
-    ) or (
-        gdsc
-        and contract.phenotype_id == "GDSC2_PLX4720_LN_IC50"
-        and contract.phenotype_unit == "ln_micromolar"
-    )
-    if not supported_phenotype:
+    if (contract.phenotype_id, contract.phenotype_unit) != policy.phenotype:
         return "INCOMPATIBLE_PHENOTYPE", "PHENOTYPE_DEFINITION_MISMATCH"
-    primary = (
-        (
-            synthetic
-            and contract.covariate_ids
-            == ("age_z_v1", "sex_code_v1", "context_v1")
-        )
-        or (gdsc and contract.covariate_ids == ("TCGA_SKCM_VS_OTHER_V1",))
-    ) and not contract.strata
-    stratified = synthetic and (
-        contract.template_id == "ols_quantitative_context_stratified_v1"
-        and contract.covariate_ids == ("age_z_v1", "sex_code_v1")
-        and contract.strata == ("context_0", "context_1")
-        and contract.parent_result_hash is not None
-        and contract.max_association_rounds == 2
-    )
-    gdsc_stratified = gdsc and (
-        contract.template_id == "ols_quantitative_lineage_stratified_v1"
-        and contract.covariate_ids == ("INTERCEPT_ONLY_AFTER_STRATIFICATION",)
-        and contract.strata == ("non_skcm", "skcm")
-        and contract.parent_result_hash is not None
-        and contract.max_association_rounds == 2
-    )
-    if not primary and not stratified and not gdsc_stratified:
-        return "MISSING_COVARIATE", "COVARIATE_SET_MISMATCH"
-    supported_policy = contract.missingness_policy == "COMPLETE_CASE_FIXED" and (
-        synthetic
-        and contract.template_id
-        in {"ols_quantitative_v1", "ols_quantitative_context_stratified_v1"}
-        and contract.cohort_rule_id == "all_synthetic_adults_v1"
-        and contract.statistical_policy_id == "ols_hc3_fixed_effect_v1"
-        and contract.privacy_policy_id == "synthetic_release_v1"
-        or gdsc
-        and contract.template_id
-        in {"ols_quantitative_v1", "ols_quantitative_lineage_stratified_v1"}
-        and contract.cohort_rule_id == "GDSC2_PLX4720_MUTATION_COVERED_V1"
-        and contract.statistical_policy_id == "OLS_HC3_FIXED_EFFECT_V1"
-        and contract.privacy_policy_id == "PUBLIC_GDSC_RELEASE_V1"
-    )
-    if not supported_policy:
-        return "POLICY_REJECTED", "UNSUPPORTED_ANALYSIS_POLICY"
+    return None
 
+
+def _budget_status(contract: AnalysisContract) -> Status | None:
+    """Refuse contracts beyond this site's cap or their own declared budget."""
+    if contract.max_association_rounds > SITE_MAX_ASSOCIATION_ROUNDS:
+        return "POLICY_REJECTED", "QUERY_BUDGET_ABOVE_LOCAL_CAP"
+    if contract.round_index >= contract.max_association_rounds:
+        return "POLICY_REJECTED", "QUERY_BUDGET_EXHAUSTED"
+    return None
+
+
+def _analysis_status(contract: AnalysisContract, policy: SitePolicy) -> Status | None:
+    templates = [item for item in policy.analyses if item.template_id == contract.template_id]
+    if not templates:
+        return "POLICY_REJECTED", "UNSUPPORTED_ANALYSIS_POLICY"
+    allowed = templates[0]
+    if allowed.followup != (contract.round_index > 0):
+        return "POLICY_REJECTED", "ROUND_TEMPLATE_MISMATCH"
+    if (contract.covariate_ids, contract.strata) != (allowed.covariate_ids, allowed.strata):
+        return "MISSING_COVARIATE", "COVARIATE_SET_MISMATCH"
+    policies = (
+        contract.missingness_policy == "COMPLETE_CASE_FIXED"
+        and contract.cohort_rule_id == policy.cohort_rule_id
+        and contract.statistical_policy_id == policy.statistical_policy_id
+        and contract.privacy_policy_id == policy.privacy_policy_id
+    )
+    if not policies:
+        return "POLICY_REJECTED", "UNSUPPORTED_ANALYSIS_POLICY"
+    return None
+
+
+def _support_status(contract: AnalysisContract, design, outcome) -> Status:
+    gdsc = contract.variant.reference_build == "CMP_DRIVER_SUMMARY_PINNED"
     filtered_design, _ = complete_cases(design, outcome)
     minimum_n = MIN_GDSC_SAMPLE_SIZE if gdsc else MIN_SAMPLE_SIZE
     if len(filtered_design) < minimum_n:
@@ -189,6 +218,32 @@ def _compatibility_status(
             "MINIMUM_GROUP_COUNT" if gdsc else "MINIMUM_ALLELE_COUNT"
         )
     return "READY", None
+
+
+def _compatibility_status(
+    contract: AnalysisContract,
+    approval: Approval,
+    design,
+    outcome,
+) -> Status:
+    """Re-validate approval, allowlist, budget and local support before any fit."""
+    try:
+        validate_contract_approval(contract, approval)
+    except ValueError:
+        return "NOT_AUTHORIZED", "APPROVAL_INVALID"
+    policy = SITE_POLICIES.get(contract.variant.reference_build)
+    if policy is None:
+        return "INCOMPATIBLE_VARIANT", "VARIANT_DEFINITION_MISMATCH"
+    if approval.scope != policy.scope:
+        return "NOT_AUTHORIZED", "APPROVAL_SCOPE_MISMATCH"
+    for check in (_definition_status, _analysis_status):
+        status = check(contract, policy)
+        if status is not None:
+            return status
+    budget = _budget_status(contract)
+    if budget is not None:
+        return budget
+    return _support_status(contract, design, outcome)
 
 
 def handle_preflight(
