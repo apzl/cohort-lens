@@ -7,8 +7,6 @@ follow-up from a closed catalog, and a human signs off each round within a fixed
 
 ![Investigation loop: federated round, gate, tool-using investigator, human approval, next round](docs/investigation-loop.gif)
 
-Step-by-step explainer with animated diagrams: [apzl.github.io/cohort-lens](https://apzl.github.io/cohort-lens/).
-
 ## What it is
 
 Several data holders often want to answer the same question but cannot pool their records.
